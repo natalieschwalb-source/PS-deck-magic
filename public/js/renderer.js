@@ -653,229 +653,351 @@ window.CinematicRenderer = {
       const GREY  = '#555555';
       const HF    = "'Lexend Deca', sans-serif";
       const BF    = "'Roboto', sans-serif";
+      const MF    = "'Roboto Mono', monospace";
 
-      // Escape HTML then convert **bold** markdown to <strong>
       const e = s => String(s||'')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
         .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
         .replace(/\*(.+?)\*/g,'<em>$1</em>');
 
-      // Footer shared by all slides
+      // Footer — white slides use red text; red slides use white/translucent
       const footer = (lightText) => {
-        const fg = lightText ? 'rgba(255,255,255,0.7)' : '#999999';
+        const fg  = lightText ? 'rgba(255,255,255,0.7)' : RED;
+        const pgc = lightText ? 'rgba(255,255,255,0.7)' : RED;
         return `
           <div style="position:absolute;bottom:0;left:0;right:0;height:9%;z-index:10;display:flex;align-items:center;padding:0 5%;">
             <div style="flex:1;font-size:0.52em;color:${fg};font-family:${BF};letter-spacing:0.03em;">© Publicis Sapient</div>
             <div style="flex:1;text-align:center;font-size:0.52em;color:${fg};font-family:${BF};letter-spacing:0.04em;">XX.2026</div>
-            ${idx > 0 ? `<div style="flex:1;text-align:right;font-size:0.52em;color:${fg};font-family:${BF};font-weight:600;">${idx+1}</div>` : '<div style="flex:1;"></div>'}
+            ${idx > 0 ? `<div style="flex:1;text-align:right;font-size:0.52em;color:${pgc};font-family:${BF};font-weight:600;">${idx+1}</div>` : '<div style="flex:1;"></div>'}
           </div>`;
       };
 
-      // Thin red accent bar for white-background slides
+      // Thin red top bar for white-bg slides
       const redBar = `<div style="position:absolute;top:0;left:0;right:0;height:4px;background:${RED};z-index:10;"></div>`;
 
-      const layout     = slide.layout || 'split';
+      // Small red subhead label above headline
+      const subLabel = (text) => text
+        ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="subtitle" data-label="Subhead" style="font-size:0.52em;font-weight:700;color:${RED};font-family:${BF};letter-spacing:0.01em;margin-bottom:0.35em;">${e(text)}</div>`
+        : '';
+
       const layoutType = slide.layoutType || '';
 
-      // ── Derive semantic flags from layoutType (preferred) with fallbacks ────
-      const isTitleHero       = layoutType === 'title-hero'        || idx === 0;
-      const isSectionDivider  = layoutType === 'section-divider'   || slide.type === 'divider';
-      const isClosing         = layoutType === 'closing-commitment' || (idx === total - 1 && idx > 0);
-      const isStatImpact      = layoutType === 'stat-impact'        || layout === 'stats'
-                                || (slide.stat1_value && slide.stat2_value);
+      const isTitleHero       = layoutType === 'title-hero'          || idx === 0;
+      const isSectionDivider  = (layoutType === 'section-divider'    || slide.type === 'divider') && !isTitleHero;
+      const isAgenda          = layoutType === 'agenda-list';
+      const isClosing         = layoutType === 'closing-commitment'  || (idx === total - 1 && idx > 0);
       const isHeadlineOnly    = layoutType === 'headline-only';
+      const isStatImpact      = layoutType === 'stat-impact'         || (layoutType === '' && slide.stat1_value && slide.stat2_value);
+      const isCaseStudy       = layoutType === 'case-study-psi';
+      const isChartInsight    = layoutType === 'chart-insight';
+      const isTableStructured = layoutType === 'table-structured';
+      const isNarrative       = layoutType === 'one-column-narrative';
       const isArchDiagram     = layoutType === 'architecture-diagram';
-      const isNarrative       = layoutType === 'one-column-narrative' || layoutType === 'agenda-list';
 
-      // ── SECTION DIVIDER — red bg, centered section name, no bullets ──────────
-      if (isSectionDivider && !isTitleHero) {
-        const sectionNum = slide.stat1_value && /^\d+$/.test(String(slide.stat1_value).trim())
-          ? `<div style="position:absolute;bottom:10%;right:5%;z-index:5;font-size:6em;font-weight:900;color:rgba(255,255,255,0.12);font-family:${HF};line-height:1;user-select:none;">${e(slide.stat1_value)}</div>`
-          : '';
+      // ── TITLE HERO — red bg, logo top-left, large white title ─────────────────
+      if (isTitleHero) {
         return `
           <div style="position:absolute;inset:0;background:${RED};"></div>
-          <div style="position:absolute;top:0;left:0;right:0;height:4px;background:rgba(0,0,0,0.15);z-index:10;"></div>
-          <div style="position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:center;padding:8% 10%;">
-            ${slide.subtitle ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="subtitle" data-label="Subtitle" style="font-size:0.6em;font-weight:600;color:rgba(255,255,255,0.65);font-family:${BF};letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.7em;">${e(slide.subtitle)}</div>` : ''}
-            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:2.8em;font-weight:800;color:${WHITE};font-family:${HF};line-height:1.06;max-width:70%;">${e(slide.title||'')}</div>
-            ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Headline" style="font-size:0.82em;color:rgba(255,255,255,0.75);font-family:${BF};line-height:1.5;margin-top:0.6em;max-width:60%;">${e(slide.headline)}</div>` : ''}
+          <div style="position:absolute;top:5%;left:5%;z-index:10;width:10%;max-width:110px;">${CinematicRenderer.PS_LOGO_WHITE}</div>
+          <div style="position:absolute;top:40%;left:5%;right:5%;z-index:5;max-width:68%;">
+            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:3em;font-weight:800;color:${WHITE};font-family:${HF};line-height:1.05;margin-bottom:0.4em;">${e(slide.title||'')}</div>
+            ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Subtitle" style="font-size:0.82em;color:rgba(255,255,255,0.75);font-family:${BF};line-height:1.5;margin-top:0.4em;">${e(slide.headline)}</div>` : ''}
           </div>
-          ${sectionNum}
           ${footer(true)}`;
       }
 
-      // ── HEADLINE ONLY — large centered headline on red ────────────────────────
+      // ── SECTION DIVIDER — red bg, title top-left, section number bottom-right ─
+      if (isSectionDivider) {
+        const rawNum = slide.stat1_value || slide.section_number || '';
+        const numStr = rawNum && /^\d+$/.test(String(rawNum).trim())
+          ? String(rawNum).padStart(2,'0') : '';
+        return `
+          <div style="position:absolute;inset:0;background:${RED};"></div>
+          <div style="position:absolute;top:10%;left:5%;right:22%;z-index:5;">
+            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Section title" style="font-size:2.8em;font-weight:800;color:${WHITE};font-family:${HF};line-height:1.06;">${e(slide.title||'')}</div>
+            ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Setup line" style="font-size:0.82em;color:rgba(255,255,255,0.72);font-family:${BF};line-height:1.5;margin-top:0.5em;">${e(slide.headline)}</div>` : ''}
+          </div>
+          ${numStr ? `<div style="position:absolute;bottom:7%;right:5%;z-index:5;font-size:7em;font-weight:800;color:${WHITE};font-family:${HF};line-height:1;">${e(numStr)}</div>` : ''}
+          ${footer(true)}`;
+      }
+
+      // ── AGENDA — red bg, Roboto Mono numbered list ────────────────────────────
+      if (isAgenda) {
+        const items = (slide.body||[]).length ? slide.body
+          : (slide.headline ? slide.headline.split('\n').filter(Boolean) : [slide.title||'']);
+        return `
+          <div style="position:absolute;inset:0;background:${RED};"></div>
+          <div style="position:absolute;top:5%;left:5%;z-index:10;font-size:0.52em;color:rgba(255,255,255,0.65);font-family:${MF};letter-spacing:0.05em;">Agenda</div>
+          <div style="position:absolute;top:13%;left:5%;right:5%;bottom:10%;z-index:5;display:flex;flex-direction:column;justify-content:space-evenly;">
+            ${items.map((item,i) => `
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="body-${i}" data-label="Agenda item" style="display:flex;align-items:baseline;gap:0.6em;font-size:1.55em;font-weight:600;color:${WHITE};font-family:${MF};line-height:1.2;">
+                <span style="opacity:0.85;min-width:2ch;">${String(i+1).padStart(2,'0')}</span>
+                <span>${e(item.replace(/^\d+[\.\)\s]+/,''))}</span>
+              </div>`).join('')}
+          </div>
+          ${footer(true)}`;
+      }
+
+      // ── HEADLINE ONLY — white bg, large red headline; or mono bordered quote ──
       if (isHeadlineOnly) {
+        const quoteText = slide.headline || '';
+        if (quoteText.length > 60 && !(slide.body||[]).length) {
+          // Manifesto / quote in bordered mono box
+          return `
+            <div style="position:absolute;inset:0;background:${WHITE};"></div>
+            <div style="position:absolute;top:5%;left:5%;z-index:5;">${subLabel(slide.subtitle)}</div>
+            <div style="position:absolute;inset:10% 6%;z-index:5;display:flex;align-items:center;">
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Quote" style="border:2px solid ${RED};border-radius:10px;padding:6% 7%;font-size:1.3em;color:${BLACK};font-family:${MF};line-height:1.6;width:100%;">${e(quoteText)}</div>
+            </div>
+            ${footer(false)}`;
+        }
         return `
-          <div style="position:absolute;inset:0;background:${RED};"></div>
-          <div style="position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:center;padding:8% 10%;">
-            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:3em;font-weight:800;color:${WHITE};font-family:${HF};line-height:1.04;max-width:75%;">${e(slide.title||'')}</div>
-            ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Headline" style="font-size:0.92em;color:rgba(255,255,255,0.72);font-family:${BF};line-height:1.5;margin-top:0.7em;max-width:65%;">${e(slide.headline)}</div>` : ''}
+          <div style="position:absolute;inset:0;background:${WHITE};"></div>
+          <div style="position:absolute;top:5%;left:5%;right:5%;z-index:5;">${subLabel(slide.subtitle)}</div>
+          <div style="position:absolute;top:${slide.subtitle?'13%':'8%'};left:5%;right:8%;z-index:5;">
+            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Headline" style="font-size:2.4em;font-weight:800;color:${RED};font-family:${HF};line-height:1.08;">${e(slide.title||'')}</div>
+            ${quoteText ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Subheadline" style="font-size:0.85em;color:${BLACK};font-family:${BF};line-height:1.55;margin-top:0.8em;">${e(quoteText)}</div>` : ''}
           </div>
-          ${footer(true)}`;
+          ${footer(false)}`;
       }
 
-      // ── CLOSING COMMITMENT — white bg, red accent, prominent CTA ─────────────
+      // ── CLOSING COMMITMENT — white bg, red left stripe ────────────────────────
       if (isClosing) {
         return `
           <div style="position:absolute;inset:0;background:${WHITE};"></div>
           ${redBar}
           <div style="position:absolute;top:0;left:0;bottom:0;width:5px;background:${RED};z-index:10;"></div>
           <div style="position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:center;padding:8% 10%;">
-            ${slide.subtitle ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="subtitle" data-label="Subtitle" style="font-size:0.58em;font-weight:700;color:${RED};font-family:${BF};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.6em;">${e(slide.subtitle)}</div>` : ''}
-            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:2.2em;font-weight:800;color:${RED};font-family:${HF};line-height:1.06;max-width:72%;margin-bottom:0.5em;">${e(slide.title||'')}</div>
+            ${subLabel(slide.subtitle)}
+            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:2em;font-weight:800;color:${RED};font-family:${HF};line-height:1.06;max-width:72%;margin-bottom:0.5em;">${e(slide.title||'')}</div>
             ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Headline" style="font-size:0.78em;color:${BLACK};font-family:${BF};line-height:1.6;max-width:58%;margin-bottom:1em;">${e(slide.headline)}</div>` : ''}
-            ${(slide.body||[]).length ? `<div style="display:flex;flex-direction:column;gap:0.3em;max-width:55%;margin-bottom:1.2em;">
+            ${(slide.body||[]).length ? `<div style="display:flex;flex-direction:column;gap:0.3em;max-width:58%;margin-bottom:1.2em;">
               ${(slide.body||[]).map((b,i)=>`<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="body-${i}" data-label="Body text" style="font-size:0.66em;color:${GREY};font-family:${BF};line-height:1.5;padding:0.25em 0;border-top:1px solid rgba(0,0,0,0.07);">${e(b)}</div>`).join('')}
             </div>` : ''}
-            ${slide.cta ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="cta" data-label="CTA button" style="display:inline-block;background:${RED};color:${WHITE};padding:0.5em 1.4em;border-radius:4px;font-size:0.72em;font-weight:700;font-family:${BF};letter-spacing:0.02em;">${e(slide.cta)} →</div>` : ''}
+            ${slide.cta ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="cta" data-label="CTA" style="display:inline-block;background:${RED};color:${WHITE};padding:0.5em 1.4em;border-radius:4px;font-size:0.72em;font-weight:700;font-family:${BF};">${e(slide.cta)} →</div>` : ''}
           </div>
           ${footer(false)}`;
       }
 
-      // ── TITLE HERO / COVER (red bg) ───────────────────────────────────────────
-      if (isTitleHero) {
-        const logoLine = `
-          <div style="position:absolute;top:5%;left:4%;z-index:10;width:11%;max-width:120px;">
-            ${CinematicRenderer.PS_LOGO_WHITE}
-          </div>`;
-        return `
-          <div style="position:absolute;inset:0;background:${RED};"></div>
-          ${logoLine}
-          <div style="position:absolute;top:38%;left:5%;right:5%;z-index:5;max-width:70%;">
-            ${slide.subtitle ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="subtitle" data-label="Subtitle" style="font-size:0.62em;font-weight:600;color:rgba(255,255,255,0.7);font-family:${BF};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.6em;">${e(slide.subtitle)}</div>` : ''}
-            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:3.2em;font-weight:800;color:${WHITE};font-family:${HF};line-height:1.05;margin-bottom:0.4em;">${e(slide.title||'')}</div>
-            ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Headline" style="font-size:0.9em;color:rgba(255,255,255,0.8);font-family:${BF};line-height:1.5;margin-top:0.5em;max-width:80%;">${e(slide.headline)}</div>` : ''}
-          </div>
-          ${footer(true)}`;
-      }
-
-      // ── STAT IMPACT (white bg, large numbers right-side) ─────────────────────
+      // ── STAT IMPACT — white bg, large red numbers on the right ───────────────
       if (isStatImpact) {
-        const hasStatValues = !!(slide.stat1_value || slide.stat2_value);
-        const textRight = hasStatValues ? '48%' : '5%';
+        const hasStat = !!(slide.stat1_value || slide.stat2_value);
+        const txtRight = hasStat ? '48%' : '5%';
         return `
           <div style="position:absolute;inset:0;background:${WHITE};"></div>
           ${redBar}
-          <div style="position:absolute;top:6%;left:5%;right:${textRight};z-index:5;">
-            ${slide.subtitle ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="subtitle" data-label="Subtitle" style="font-size:0.58em;font-weight:700;color:${RED};font-family:${BF};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.5em;">${e(slide.subtitle)}</div>` : ''}
+          <div style="position:absolute;top:6%;left:5%;right:${txtRight};z-index:5;">
+            ${subLabel(slide.subtitle)}
             <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:1.9em;font-weight:800;color:${RED};font-family:${HF};line-height:1.05;margin-bottom:0.4em;">${e(slide.title||'')}</div>
             ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Headline" style="font-size:0.75em;color:${BLACK};font-family:${BF};line-height:1.55;margin-bottom:1em;">${e(slide.headline)}</div>` : ''}
-            ${(slide.body||[]).map((b,i)=>`<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="body-${i}" data-label="Body text" style="font-size:0.7em;color:${GREY};font-family:${BF};line-height:1.5;margin-bottom:0.4em;">${e(b)}</div>`).join('')}
+            ${(slide.body||[]).map((b,i)=>`<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="body-${i}" data-label="Body text" style="font-size:0.68em;color:${GREY};font-family:${BF};line-height:1.5;margin-bottom:0.4em;">${e(b)}</div>`).join('')}
           </div>
           ${slide.stat1_value ? `
-            <div style="position:absolute;top:${slide.stat2_value?'10%':'25%'};right:5%;z-index:5;text-align:right;">
-              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat1_value" data-label="Stat 1 value" style="font-size:3.5em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat1_value)}</div>
-              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat1_label" data-label="Stat 1 label" style="font-size:0.58em;color:${GREY};font-family:${BF};letter-spacing:0.08em;text-transform:uppercase;margin-top:0.2em;">${e(slide.stat1_label||'')}</div>
+            <div style="position:absolute;top:${slide.stat2_value?'8%':'22%'};right:4%;width:44%;z-index:5;">
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat1_value" data-label="Stat 1" style="font-size:3.5em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat1_value)}</div>
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat1_label" data-label="Stat 1 label" style="font-size:0.55em;color:${GREY};font-family:${BF};letter-spacing:0.1em;text-transform:uppercase;margin-top:0.2em;">${e(slide.stat1_label||'')}</div>
             </div>` : ''}
           ${slide.stat2_value ? `
-            <div style="position:absolute;top:40%;right:5%;z-index:5;text-align:right;">
-              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat2_value" data-label="Stat 2 value" style="font-size:3.5em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat2_value)}</div>
-              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat2_label" data-label="Stat 2 label" style="font-size:0.58em;color:${GREY};font-family:${BF};letter-spacing:0.08em;text-transform:uppercase;margin-top:0.2em;">${e(slide.stat2_label||'')}</div>
+            <div style="position:absolute;top:42%;right:4%;width:44%;z-index:5;">
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat2_value" data-label="Stat 2" style="font-size:3.5em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat2_value)}</div>
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat2_label" data-label="Stat 2 label" style="font-size:0.55em;color:${GREY};font-family:${BF};letter-spacing:0.1em;text-transform:uppercase;margin-top:0.2em;">${e(slide.stat2_label||'')}</div>
             </div>` : ''}
-          ${slide.cta ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="cta" data-label="CTA button" style="position:absolute;bottom:12%;left:5%;z-index:5;background:${RED};color:${WHITE};padding:0.4em 1.1em;border-radius:4px;font-size:0.68em;font-weight:700;font-family:${BF};">${e(slide.cta)} →</div>` : ''}
+          ${slide.stat3_value ? `
+            <div style="position:absolute;top:68%;right:4%;width:44%;z-index:5;">
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat3_value" data-label="Stat 3" style="font-size:2.8em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat3_value)}</div>
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat3_label" data-label="Stat 3 label" style="font-size:0.55em;color:${GREY};font-family:${BF};letter-spacing:0.1em;text-transform:uppercase;margin-top:0.2em;">${e(slide.stat3_label||'')}</div>
+            </div>` : ''}
           ${footer(false)}`;
       }
 
-      // ── ONE-COLUMN NARRATIVE / AGENDA — full-width text, no image zone ────────
+      // ── CASE STUDY PSI — problem / solution / impact structured blocks ─────────
+      if (isCaseStudy) {
+        const items = slide.body || [];
+        let problem = '', solution = '', impact = '';
+        items.forEach(item => {
+          const lower = item.toLowerCase();
+          if (/^(the\s+)?problem:?\s*/i.test(item))      problem  = item.replace(/^(the\s+)?problem:?\s*/i,'');
+          else if (/^(the\s+)?solution:?\s*/i.test(item)) solution = item.replace(/^(the\s+)?solution:?\s*/i,'');
+          else if (/^(the\s+)?impact:?\s*/i.test(item))   impact   = item.replace(/^(the\s+)?impact:?\s*/i,'');
+        });
+        if (!problem && !solution) { problem = items[0]||''; solution = items[1]||''; impact = items[2]||''; }
+        const hasStatValues = !!(slide.stat1_value || slide.stat2_value);
+        const mainW = hasStatValues ? '62%' : '92%';
+        return `
+          <div style="position:absolute;inset:0;background:${WHITE};"></div>
+          ${redBar}
+          <div style="position:absolute;top:5%;left:5%;z-index:5;">
+            ${subLabel(slide.subtitle)}
+            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:1.6em;font-weight:800;color:${RED};font-family:${HF};line-height:1.06;max-width:${mainW};margin-bottom:0.5em;">${e(slide.title||'')}</div>
+          </div>
+          <div style="position:absolute;top:30%;left:5%;width:${mainW};z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:4%;height:55%;">
+            <div>
+              <div style="font-size:0.55em;font-weight:700;color:${BLACK};font-family:${BF};margin-bottom:0.5em;">The problem</div>
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="problem" data-label="The problem" style="font-size:0.66em;color:${GREY};font-family:${BF};line-height:1.55;">${e(problem)}</div>
+            </div>
+            <div>
+              <div style="font-size:0.55em;font-weight:700;color:${BLACK};font-family:${BF};margin-bottom:0.5em;">The solution</div>
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="solution" data-label="The solution" style="font-size:0.66em;color:${GREY};font-family:${BF};line-height:1.55;">${e(solution)}</div>
+            </div>
+            ${impact ? `<div style="grid-column:1/-1;border-top:1px solid rgba(0,0,0,0.08);padding-top:3%;">
+              <div style="font-size:0.55em;font-weight:700;color:${BLACK};font-family:${BF};margin-bottom:0.5em;">The impact</div>
+              <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="impact" data-label="The impact" style="font-size:0.66em;color:${GREY};font-family:${BF};line-height:1.55;">${e(impact)}</div>
+            </div>` : ''}
+          </div>
+          ${hasStatValues ? `
+            <div style="position:absolute;top:28%;right:2%;width:33%;z-index:5;display:flex;flex-direction:column;gap:6%;">
+              ${slide.stat1_value ? `<div>
+                <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat1_value" data-label="Stat 1" style="font-size:2.8em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat1_value)}</div>
+                <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat1_label" data-label="Stat 1 label" style="font-size:0.52em;color:${GREY};font-family:${BF};line-height:1.3;">${e(slide.stat1_label||'')}</div>
+              </div>` : ''}
+              ${slide.stat2_value ? `<div>
+                <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat2_value" data-label="Stat 2" style="font-size:2.8em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat2_value)}</div>
+                <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat2_label" data-label="Stat 2 label" style="font-size:0.52em;color:${GREY};font-family:${BF};line-height:1.3;">${e(slide.stat2_label||'')}</div>
+              </div>` : ''}
+              ${slide.stat3_value ? `<div>
+                <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat3_value" data-label="Stat 3" style="font-size:2.3em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat3_value)}</div>
+                <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="stat3_label" data-label="Stat 3 label" style="font-size:0.52em;color:${GREY};font-family:${BF};line-height:1.3;">${e(slide.stat3_label||'')}</div>
+              </div>` : ''}
+            </div>` : ''}
+          ${footer(false)}`;
+      }
+
+      // ── CHART INSIGHT — white bg, chart area dominates ────────────────────────
+      if (isChartInsight) {
+        return `
+          <div style="position:absolute;inset:0;background:${WHITE};"></div>
+          <div style="position:absolute;top:5%;left:5%;right:5%;z-index:5;">
+            ${subLabel(slide.subtitle)}
+            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Chart title" style="font-size:1.85em;font-weight:800;color:${RED};font-family:${HF};line-height:1.06;margin-bottom:0.2em;">${e(slide.title||'')}</div>
+            ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Takeaway" style="font-size:0.68em;color:${BLACK};font-family:${BF};line-height:1.5;">${e(slide.headline)}</div>` : ''}
+          </div>
+          <div style="position:absolute;top:30%;left:5%;right:5%;bottom:11%;z-index:5;border:1.5px solid rgba(0,0,0,0.09);border-radius:6px;display:flex;align-items:center;justify-content:center;background:#fafafa;">
+            ${slide.image_data_url
+              ? `<img src="${slide.image_data_url}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;" />`
+              : `<div style="opacity:0.25;font-size:0.65em;font-family:${MF};color:${BLACK};letter-spacing:0.06em;text-transform:uppercase;">Data Viz</div>`}
+          </div>
+          ${footer(false)}`;
+      }
+
+      // ── TABLE STRUCTURED — white bg, red-line table ───────────────────────────
+      if (isTableStructured) {
+        const td = slide.table || null;
+        return `
+          <div style="position:absolute;inset:0;background:${WHITE};"></div>
+          <div style="position:absolute;top:5%;left:5%;right:5%;z-index:5;">
+            ${subLabel(slide.subtitle)}
+            <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:1.85em;font-weight:800;color:${RED};font-family:${HF};line-height:1.06;margin-bottom:0.6em;">${e(slide.title||'')}</div>
+          </div>
+          <div style="position:absolute;top:28%;left:5%;right:5%;bottom:11%;z-index:5;overflow:hidden;">
+            ${td ? `
+              <table style="width:100%;border-collapse:collapse;font-family:${BF};font-size:0.62em;">
+                <thead><tr style="border-top:2px solid ${RED};border-bottom:2px solid ${RED};">
+                  ${(td.headers||[]).map(h=>`<th style="padding:0.65em 0.8em;text-align:left;font-weight:700;color:${BLACK};">${e(h)}</th>`).join('')}
+                </tr></thead>
+                <tbody>
+                  ${(td.rows||[]).map(row=>`<tr style="border-bottom:1px solid rgba(0,0,0,0.1);">
+                    ${(Array.isArray(row)?row:[]).map((cell,ci)=>`<td style="padding:0.65em 0.8em;color:${ci===0?BLACK:GREY};font-weight:${ci===0?700:400};">${e(cell)}</td>`).join('')}
+                  </tr>`).join('')}
+                  <tr><td colspan="99" style="border-top:2px solid ${RED};height:2px;padding:0;"></td></tr>
+                </tbody>
+              </table>` : `
+              <div style="width:100%;height:100%;border:1.5px solid rgba(0,0,0,0.09);border-radius:6px;display:flex;align-items:center;justify-content:center;background:#fafafa;">
+                <div style="opacity:0.25;font-size:0.65em;font-family:${MF};color:${BLACK};letter-spacing:0.06em;text-transform:uppercase;">Table</div>
+              </div>`}
+          </div>
+          ${footer(false)}`;
+      }
+
+      // ── ONE-COLUMN NARRATIVE — full-width text, wide margins ─────────────────
       if (isNarrative) {
         return `
           <div style="position:absolute;inset:0;background:${WHITE};"></div>
           ${redBar}
-          <div style="position:absolute;top:6%;left:5%;right:5%;z-index:5;display:flex;flex-direction:column;height:82%;">
-            ${slide.subtitle ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="subtitle" data-label="Subtitle" style="font-size:0.55em;font-weight:700;color:${RED};font-family:${BF};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.5em;">${e(slide.subtitle)}</div>` : ''}
+          <div style="position:absolute;top:5%;left:5%;right:5%;z-index:5;display:flex;flex-direction:column;height:82%;">
+            ${subLabel(slide.subtitle)}
             <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:1.85em;font-weight:800;color:${RED};font-family:${HF};line-height:1.06;margin-bottom:0.4em;">${e(slide.title||'')}</div>
-            ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Headline" style="font-size:0.78em;color:${BLACK};font-family:${BF};line-height:1.6;margin-bottom:0.8em;max-width:72%;">${e(slide.headline)}</div>` : ''}
+            ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Headline" style="font-size:0.78em;color:${BLACK};font-family:${BF};line-height:1.6;margin-bottom:0.8em;max-width:74%;">${e(slide.headline)}</div>` : ''}
             ${(slide.body||[]).length ? `<div style="flex:1;overflow:hidden;columns:${(slide.body||[]).length > 4 ? 2 : 1};column-gap:6%;">
               ${(slide.body||[]).map((b,i)=>`<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="body-${i}" data-label="Body text" style="font-size:0.68em;color:${GREY};font-family:${BF};line-height:1.55;padding:0.3em 0;border-top:1px solid rgba(0,0,0,0.07);break-inside:avoid;">${e(b)}</div>`).join('')}
             </div>` : ''}
-            ${slide.cta ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="cta" data-label="CTA button" style="margin-top:auto;display:inline-block;background:${RED};color:${WHITE};padding:0.4em 1.1em;border-radius:4px;font-size:0.65em;font-weight:700;font-family:${BF};">${e(slide.cta)} →</div>` : ''}
           </div>
           ${footer(false)}`;
       }
 
-      // ── ARCHITECTURE DIAGRAM — narrow left text (40%), wide right zone (56%) ──
+      // ── ARCHITECTURE DIAGRAM — narrow text left (40%), wide diagram right ─────
       if (isArchDiagram) {
-        const hasImage = slide.hasImage !== false && slide.image_data_url;
-        const diagramPanel = hasImage
+        const hasImg = !!(slide.hasImage !== false && slide.image_data_url);
+        const diagramPanel = hasImg
           ? `<img src="${slide.image_data_url}" style="position:absolute;right:0;top:0;width:56%;height:100%;object-fit:cover;border-radius:16px 0 0 16px;" />`
-          : '';
-        const textRight = diagramPanel ? '58%' : '5%';
+          : `<div style="position:absolute;right:0;top:0;width:56%;height:100%;background:#f4f4f4;display:flex;align-items:center;justify-content:center;border-radius:16px 0 0 16px;"><div style="opacity:0.25;font-size:0.65em;font-family:${MF};color:${BLACK};letter-spacing:0.06em;text-transform:uppercase;">Architecture Diagram</div></div>`;
         return `
           <div style="position:absolute;inset:0;background:${WHITE};"></div>
           ${redBar}
           ${diagramPanel}
-          <div style="position:absolute;top:6%;left:4%;right:${textRight};z-index:5;display:flex;flex-direction:column;height:82%;">
-            ${slide.subtitle ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="subtitle" data-label="Subtitle" style="font-size:0.52em;font-weight:700;color:${RED};font-family:${BF};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4em;">${e(slide.subtitle)}</div>` : ''}
+          <div style="position:absolute;top:5%;left:4%;right:58%;z-index:5;display:flex;flex-direction:column;height:82%;">
+            ${subLabel(slide.subtitle)}
             <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:1.45em;font-weight:800;color:${RED};font-family:${HF};line-height:1.08;margin-bottom:0.4em;">${e(slide.title||'')}</div>
             ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Headline" style="font-size:0.68em;color:${BLACK};font-family:${BF};line-height:1.55;margin-bottom:0.7em;">${e(slide.headline)}</div>` : ''}
             ${(slide.body||[]).length ? `<div style="flex:1;overflow:hidden;">
-              ${(slide.body||[]).map((b,i)=>`<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="body-${i}" data-label="Body text" style="font-size:0.62em;color:${GREY};font-family:'Roboto Mono',monospace;line-height:1.5;margin-bottom:0.35em;">${e(b)}</div>`).join('')}
+              ${(slide.body||[]).map((b,i)=>`<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="body-${i}" data-label="Body text" style="font-size:0.62em;color:${GREY};font-family:${MF};line-height:1.5;margin-bottom:0.35em;">${e(b)}</div>`).join('')}
             </div>` : ''}
           </div>
           ${footer(false)}`;
       }
 
-      // ── SPLIT layout (white bg, left text + right content) ───────────────────
-      // Used for: two-column-content, solution-hero, pillar-detail, case-study-psi,
-      //           image-headline, chart-insight, and all unmatched content slides.
-      const hasImage = slide.hasImage !== false && slide.image_data_url;
-      const hasBullets = slide.body && slide.body.length;
-      const hasStats = slide.stat1_value;
+      // ── SPLIT / DEFAULT — white bg, text left + right panel ───────────────────
+      // Handles: two-column-content, solution-hero, pillar-detail, image-headline, fallback
+      const hasImage = !!(slide.hasImage !== false && slide.image_data_url);
+      const hasBullets = !!(slide.body && slide.body.length);
+      const bulletCount = (slide.body||[]).length;
+      const hasStats = !!slide.stat1_value;
+      const ltLower = layoutType.toLowerCase();
+      const wantCards = (ltLower === 'pillar-detail' || ltLower === 'solution-hero') && bulletCount >= 3;
 
-      // Build right-side panel content (priority: image > card grid > stats)
       let rightPanel = '';
       if (hasImage) {
         rightPanel = `<img src="${slide.image_data_url}" style="position:absolute;right:0;top:0;width:46%;height:100%;object-fit:cover;border-radius:16px 0 0 16px;" />`;
-      } else if (slide.body && slide.body.length >= 4 && !hasStats) {
-        // 2-column body as red cards (capabilities style)
-        const cards = slide.body.slice(0, 6);
+      } else if (wantCards) {
+        const cards = (slide.body||[]).slice(0,6);
+        const cols = cards.length <= 4 ? 2 : 3;
         rightPanel = `
-          <div style="position:absolute;right:4%;top:16%;width:46%;z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:2%;height:72%;">
+          <div style="position:absolute;right:3%;top:12%;width:48%;z-index:5;display:grid;grid-template-columns:repeat(${cols},1fr);gap:2%;height:76%;">
             ${cards.map(card => {
-              const parts = card.split(':');
-              const cardTitle = parts[0]||'';
-              const cardBody  = parts.slice(1).join(':').trim()||card;
-              return `<div style="background:${RED};border-radius:14px;padding:6% 7%;display:flex;flex-direction:column;justify-content:space-between;">
-                <div style="font-size:0.62em;font-weight:700;color:${WHITE};font-family:${HF};line-height:1.2;margin-bottom:auto;">${e(cardTitle||card)}</div>
-                ${parts.length>1?`<div style="font-size:0.52em;color:rgba(255,255,255,0.85);font-family:${BF};line-height:1.4;margin-top:8%;">${e(cardBody)}</div>`:''}
+              const ci = card.indexOf(':');
+              const ct = ci > 0 ? card.slice(0,ci).trim() : card;
+              const cb = ci > 0 ? card.slice(ci+1).trim() : '';
+              return `<div style="background:${RED};border-radius:10px;padding:6% 7%;display:flex;flex-direction:column;">
+                <div style="font-size:0.6em;font-weight:700;color:${WHITE};font-family:${HF};line-height:1.2;margin-bottom:auto;">${e(ct)}</div>
+                ${cb?`<div style="font-size:0.5em;color:rgba(255,255,255,0.85);font-family:${BF};line-height:1.4;margin-top:10%;">${e(cb)}</div>`:''}
               </div>`;
             }).join('')}
           </div>`;
       } else if (hasStats) {
         rightPanel = `
-          <div style="position:absolute;right:5%;top:20%;z-index:5;text-align:right;">
-            <div style="font-size:0.55em;color:${BLACK};font-family:${BF};font-weight:600;margin-bottom:0.3em;">The impact</div>
-            <div style="font-size:3.2em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat1_value)}</div>
-            <div style="font-size:0.55em;color:${GREY};font-family:${BF};letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.4em;">${e(slide.stat1_label||'')}</div>
-            ${slide.stat2_value ? `
-              <div style="font-size:3em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat2_value)}</div>
-              <div style="font-size:0.55em;color:${GREY};font-family:${BF};letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.4em;">${e(slide.stat2_label||'')}</div>` : ''}
-            ${slide.stat3_value ? `
-              <div style="font-size:2.2em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat3_value)}</div>
-              <div style="font-size:0.55em;color:${GREY};font-family:${BF};letter-spacing:0.06em;text-transform:uppercase;">${e(slide.stat3_label||'')}</div>` : ''}
+          <div style="position:absolute;right:4%;top:16%;z-index:5;">
+            <div style="font-size:0.52em;font-weight:700;color:${BLACK};font-family:${BF};margin-bottom:0.4em;text-transform:uppercase;letter-spacing:0.04em;">The impact</div>
+            <div style="font-size:3em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat1_value)}</div>
+            <div style="font-size:0.52em;color:${GREY};font-family:${BF};margin-bottom:1.2em;">${e(slide.stat1_label||'')}</div>
+            ${slide.stat2_value?`<div style="font-size:2.8em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat2_value)}</div><div style="font-size:0.52em;color:${GREY};font-family:${BF};margin-bottom:1.2em;">${e(slide.stat2_label||'')}</div>`:''}
+            ${slide.stat3_value?`<div style="font-size:2.2em;font-weight:800;color:${RED};font-family:${HF};line-height:1;">${e(slide.stat3_value)}</div><div style="font-size:0.52em;color:${GREY};font-family:${BF};">${e(slide.stat3_label||'')}</div>`:''}
           </div>`;
       }
 
-      // Hard stop: text column ends at 48% when a right panel exists —
-      // never let body text run beneath the visual zone.
       const textRight = rightPanel ? '48%' : '5%';
+      const titleSize = bulletCount >= 3 ? '1.55em' : '1.85em';
 
       return `
         <div style="position:absolute;inset:0;background:${WHITE};"></div>
         ${redBar}
         ${rightPanel}
-        <div style="position:absolute;top:6%;left:5%;right:${textRight};z-index:5;display:flex;flex-direction:column;height:82%;">
-          ${slide.subtitle ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="subtitle" data-label="Subtitle" style="font-size:0.55em;font-weight:700;color:${RED};font-family:${BF};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.5em;">${e(slide.subtitle)}</div>` : ''}
-          <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:${hasBullets&&hasBullets>=2?'1.55em':'1.85em'};font-weight:800;color:${RED};font-family:${HF};line-height:1.06;margin-bottom:0.4em;">${e(slide.title||'')}</div>
+        <div style="position:absolute;top:5%;left:5%;right:${textRight};z-index:5;display:flex;flex-direction:column;height:82%;">
+          ${subLabel(slide.subtitle)}
+          <div class="slide-editable" contenteditable="true" spellcheck="true" data-field="title" data-label="Title" style="font-size:${titleSize};font-weight:800;color:${RED};font-family:${HF};line-height:1.06;margin-bottom:0.4em;">${e(slide.title||'')}</div>
           ${slide.headline ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="headline" data-label="Headline" style="font-size:0.72em;color:${BLACK};font-family:${BF};line-height:1.55;margin-bottom:0.8em;">${e(slide.headline)}</div>` : ''}
           ${hasBullets ? `<div style="flex:1;overflow:hidden;">
-            ${layout === 'bullets' || hasBullets <= 3
-              ? (slide.body||[]).map((b,i)=>`<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="body-${i}" data-label="Body text" style="font-size:0.68em;color:${GREY};font-family:${BF};line-height:1.55;padding:0.3em 0;border-top:1px solid rgba(0,0,0,0.07);">${e(b)}</div>`).join('')
-              : (slide.body||[]).map((b,i)=>`<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="body-${i}" data-label="Body text" style="font-size:0.68em;color:${GREY};font-family:${BF};line-height:1.5;margin-bottom:0.4em;">${e(b)}</div>`).join('')
-            }
+            ${(slide.body||[]).map((b,i)=>`<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="body-${i}" data-label="Body text" style="font-size:0.68em;color:${GREY};font-family:${BF};line-height:1.55;padding:0.3em 0;border-top:1px solid rgba(0,0,0,0.07);">${e(b)}</div>`).join('')}
           </div>` : ''}
-          ${slide.cta ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="cta" data-label="CTA button" style="margin-top:auto;display:inline-block;background:${RED};color:${WHITE};padding:0.4em 1.1em;border-radius:4px;font-size:0.65em;font-weight:700;font-family:${BF};">${e(slide.cta)} →</div>` : ''}
+          ${slide.cta ? `<div class="slide-editable" contenteditable="true" spellcheck="true" data-field="cta" data-label="CTA" style="margin-top:auto;display:inline-block;background:${RED};color:${WHITE};padding:0.4em 1.1em;border-radius:4px;font-size:0.65em;font-weight:700;font-family:${BF};">${e(slide.cta)} →</div>` : ''}
         </div>
         ${footer(false)}`;
     },

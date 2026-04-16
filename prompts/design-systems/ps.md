@@ -24,6 +24,12 @@ clean, structured, modern, outcome-led, and operationally credible.
 - Chart accents may be used when needed, but should never overpower Radiant Red
 - In co-branded contexts, client colors may appear, but Publicis Sapient red remains the primary signal color
 
+### Footer behavior
+- On **red background slides** (title-hero, section-divider, agenda-list): footer text is **white**
+- On **white background slides** (all other layouts): footer text is **Radiant Red** (`#E90130`)
+- Footer contains: page number (left), client/project label (center), Publicis Sapient (right)
+- Footer uses Roboto Mono, small size, consistent across all slides
+
 ### Typography rules
 - Headlines: Lexend Deca SemiBold
 - Subheads / impactful callouts: Lexend Deca SemiBold
@@ -139,9 +145,11 @@ Structure:
 - Footer / date / page index handled by template system
 
 Visual rules:
-- May use Radiant Red background or white background depending on tone
-- If red background, text must be white and highly legible
-- Logo top-left
+- **Always** uses Radiant Red (`#E90130`) background
+- Logo positioned top-left in white
+- Title in large white type, vertically positioned at ~40% of the slide (upper half)
+- Subhead below the title in smaller white type with reduced opacity
+- Footer in white text at bottom
 - Never clutter with bullets
 - This slide should feel definitive
 
@@ -162,12 +170,16 @@ Structure:
 - Minimal explanatory copy
 
 Visual rules:
-- Clean white background preferred
-- Typographic hierarchy only
-- No hero image required
+- **Radiant Red background** (`#E90130`) — red, not white
+- Small "Agenda" label in Roboto Mono, white with reduced opacity, above the item list
+- Items numbered with zero-padded Roboto Mono digits: `01`, `02`, `03`…
+- Item text in white Lexend Deca, large and spaced vertically to fill the slide
+- Items distribute evenly using vertical space (`justify-content: space-evenly`)
+- Footer in white text
 
 Avoid:
-- Long descriptions
+- Long descriptions per item
+- White background on this layout
 - Decorative imagery
 
 ---
@@ -178,16 +190,21 @@ Use when:
 - Resetting the audience before a shift in argument
 
 Structure:
-- Section name
+- Section name (title)
 - Optional one-line setup statement
 - Section number if applicable
 
 Visual rules:
-- Often full red or strong high-contrast layout
-- Minimal content
-- Must feel like a reset, not a content slide
+- **Always Radiant Red background**
+- Title positioned at the **top-left** of the slide (~top 10%, left 5%) — NOT centered vertically
+- Title text is large, white, bold (Lexend Deca)
+- Section number (e.g. `01`, `02`) displayed in **very large Roboto Mono** (7em+) at the **bottom-right** of the slide, white with opacity ~0.2 (ghost watermark effect)
+- Footer in white text
+- Minimal content — no bullets, no body copy
 
 Avoid:
+- Centering the title vertically (it belongs at top-left)
+- Omitting the section number watermark when a number is provided
 - Repeating the next slide’s body copy
 - Bullet points
 - Explanatory overload
@@ -321,15 +338,18 @@ Structure:
 - Optional short bullet list beneath
 
 Visual rules:
-- Stats are the hero
-- Red can be used strongly here
-- Large numbers may use Roboto Mono styling cues if appropriate
+- **White background** with thin red top bar
+- Left column (~55%): headline, subhead, and short supporting bullet points (Lexend Deca body)
+- Right column (~40%): large stat numbers in **Radiant Red** (`#E90130`), Roboto Mono or Lexend Deca, with small label below each in grey
+- Stats are the hero — numbers dominate the right column
 - Lots of whitespace
+- Footer uses Radiant Red text on white
 
 Avoid:
-- More than 2 major stats
+- More than 2 major stats in the right column
 - Tiny annotations everywhere
 - Fake precision when data is directional
+- Red background (this layout uses white)
 
 ---
 
@@ -340,30 +360,37 @@ Use when:
 - Proof through example
 
 Structure:
-- Client / context
-- The problem
-- The solution
-- The impact
-- 2–3 measurable outcomes if available
+- Client / context label (Roboto Mono, small red, above headline)
+- Headline
+- Three structured PSI blocks (stacked vertically):
+  - **The problem** — 1–2 lines describing the challenge
+  - **The solution** — 1–2 lines describing the approach
+  - **The impact** — 1–2 lines describing the outcome
+- Optional right column (~35%) with 2–3 large metric stats if quantified outcomes are available
 
 Visual rules:
-- Use structured blocks or bands
-- Needs clear hierarchy
-- Can include logo / image / product visual if real and relevant
+- **White background** with thin red top bar
+- PSI block labels (“The problem”, “The solution”, “The impact”) in **Radiant Red**, Roboto Mono, small caps style
+- Each block has its content in Lexend Deca body text beneath the label
+- If stats are present: right column shows large red numbers (Roboto Mono) with small grey label beneath each
+- The three PSI blocks fill the left 60% of the content area
+- Needs clear hierarchy between label and content within each block
+- Can include logo / image if real and relevant
 
 Avoid:
 - Generic “we helped a client transform” language
-- No quantified impact if the slide is meant to prove value
+- Omitting quantified impact when the slide's purpose is to prove value
+- Forcing a right stats column when no metrics are available
 
 ---
 
 ### Layout 11 — `table-structured`
 Use when:
 - Commercial model
-- comparison matrices
-- requirements mapping
-- phased scopes
-- governance / ownership models
+- Comparison matrices
+- Requirements mapping
+- Phased scopes
+- Governance / ownership models
 
 Structure:
 - Headline
@@ -371,14 +398,17 @@ Structure:
 - Table as primary content
 
 Visual rules:
-- White background preferred
-- Strong table hierarchy
-- Red only for emphasis, not full fill everywhere
+- **White background — no red top bar** on this layout
+- Table has a bold **Radiant Red top border** and **Radiant Red bottom border**
+- Header row uses red fill with white bold text (Roboto Mono or Lexend Deca)
+- Body rows alternate between white and very light grey
 - Keep rows readable and spacious
+- Footer uses Radiant Red text on white
 
 Avoid:
 - Tiny unreadable tables
 - Decorative visuals competing with the table
+- Red bar at top (the table's own red borders handle the accent)
 
 ---
 
@@ -393,13 +423,17 @@ Structure:
 - Optional 1–2 bullets with implication
 
 Visual rules:
-- Chart must be readable first
-- Use brand-safe chart colors
-- Use red as primary accent, not rainbow clutter
+- **White background — no red top bar** on this layout
+- Chart area occupies the majority of the slide (~65% height), with a visible 1px border in light grey
+- Headline and subhead above the chart
+- Chart placeholder label ("DATA VISUALIZATION") inside the chart area when no data is available
+- Use Radiant Red as primary chart accent color — not rainbow clutter
+- Footer uses Radiant Red text on white
 
 Avoid:
-- A chart without a takeaway
+- A chart without a takeaway headline / subhead
 - More than one complex chart per slide unless very simple
+- Red bar at top (the chart area border handles the structure)
 
 ---
 
@@ -427,33 +461,38 @@ Avoid:
 
 ### Layout 14 — `headline-only`
 Use when:
-- provocative statement
-- sharp transition
-- bold summary line
-- manifesto / framing moment
+- Provocative statement
+- Sharp transition
+- Bold summary line
+- Manifesto / framing moment
+- Pull quote or sourced statement
 
 Structure:
-- Headline only
-- Optional tiny subhead
+- Headline only (or a quoted statement)
+- Optional tiny subhead or attribution
 
 Visual rules:
-- Maximum whitespace
-- Strong typographic confidence
-- Best used sparingly
+- **White background** — this layout is NOT red
+- Headline rendered in large **Radiant Red** (`#E90130`) text (Lexend Deca SemiBold, ~2.6em)
+- Maximum whitespace — headline should breathe
+- Strong typographic confidence; scale creates the drama
+- **If the headline exceeds ~60 characters** (i.e. it is a long quote or manifesto sentence rather than a short punchline): render it inside a Roboto Mono quote box with a left border in Radiant Red and slightly smaller text (~1.4em), white background
+- Footer uses Radiant Red text on white
 
 Avoid:
-- Using this repeatedly
-- Long explanation text
+- Red background (this layout relies on the red TYPE for contrast, not the background)
+- Using this layout repeatedly
+- Long explanation text after the headline
 
 ---
 
 ### Layout 15 — `closing-commitment`
 Use when:
-- final slide
-- recommendation
-- ask
-- closing statement
-- partnership close
+- Final slide
+- Recommendation
+- Ask
+- Closing statement
+- Partnership close
 
 Structure:
 - Final headline
@@ -461,15 +500,21 @@ Structure:
 - Optional next step / recommendation / commitment line
 
 Visual rules:
+- **White background**
+- A **Radiant Red horizontal bar** spans the full width at the top of the content area (4–6px thick)
+- A **Radiant Red vertical stripe** runs down the left edge of the main content (4–6px wide, full height)
+- These two red elements create an “L-bracket” feel — purposeful, clean, conclusive
+- Headline in large Lexend Deca, dark/black
+- Body text in Roboto Regular, dark grey
 - Must feel intentional and conclusive
-- Can be red or white depending on deck tone
-- No appendix feel
-- No dead-end CTA with nowhere to click
+- Footer uses Radiant Red text
 
 Avoid:
+- Red background (this is always white)
 - Ending on team bios
 - Ending on appendix
 - Ending on generic “thank you”
+- Making it look like an unresolved content slide
 
 ---
 
@@ -493,11 +538,12 @@ Placeholder labels should reflect the visual intent:
 
 ## 6) Content density rules by layout
 
-### Sparse layouts
-- title-hero
-- section-divider
-- headline-only
-- image-headline
+### Sparse layouts (red bg: title-hero, section-divider, agenda-list)
+- title-hero — red bg, white type
+- section-divider — red bg, white type, ghost section number
+- agenda-list — red bg, white Roboto Mono numbered list
+- headline-only — white bg, large red headline
+- image-headline — white or image bg
 
 ### Medium-density layouts
 - one-column-narrative
