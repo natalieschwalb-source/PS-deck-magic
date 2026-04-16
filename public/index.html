@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PS Deck Magic V5</title>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lato:wght@400;700&family=Lexend+Deca:wght@400;500;600;700;800;900&family=Oswald:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Roboto:wght@300;400;500;700&family=Space+Grotesk:wght@300;400;500;700&family=Syne:wght@400;700;800&family=Lora:ital,wght@0,400;0,700;1,400&family=Manrope:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0b14;--bg2:#13111f;--bg3:#1a1826;--bg4:#211f32;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#eceaf8;--text2:#9491b0;--text3:#8886a5;
+  --accent:#6858f0;--accent2:#a89cf8;--accent-bg:rgba(104,88,240,0.12);
+  --header-h:56px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+
+/* ── HEADER ── */
+#app-header{
+  height:var(--header-h);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg);
+  flex-shrink:0;z-index:100;
+}
+.logo{font-size:15px;font-weight:700;letter-spacing:-0.4px;white-space:nowrap}
+.logo em{color:var(--accent2);font-style:normal}
+.logo span{font-weight:300;color:var(--text3);font-size:12px;margin-left:6px}
+
+/* Phase stepper */
+.stepper{display:flex;align-items:center;gap:0;justify-content:center}
+.step{display:flex;align-items:center;gap:7px;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.step.step-locked{opacity:0.38;cursor:not-allowed;pointer-events:none}
+.step .step-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:var(--bg4);color:var(--text3);border:1px solid var(--border2);transition:all 0.2s}
+.step.active{color:var(--text)}
+.step.active .step-num{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 0 12px rgba(104,88,240,0.45)}
+.step.done{color:var(--text2)}
+.step.done .step-num{background:rgba(104,88,240,0.15);color:var(--accent2);border-color:rgba(104,88,240,0.3)}
+.step-connector{width:32px;height:1px;background:var(--border2)}
+
+.header-right{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text3)}
+.status-dot.ok{background:#3ddc84;box-shadow:0 0 6px rgba(61,220,132,0.5)}
+.status-dot.err{background:#e05555}
+#status-text{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── SHARED: Phase wrapper ── */
+.phase{display:none;flex:1;overflow:hidden;flex-direction:column}
+.phase.active{display:flex}
+
+/* ── PHASE 1: BRIEF PANEL ── */
+#phase1{flex-direction:column;overflow-y:auto}
+#p1-panel{
+  flex:1;overflow-y:auto;padding:28px 20px 40px;
+  max-width:760px;width:100%;align-self:center;
+}
+.p1-form{display:flex;flex-direction:column;gap:14px}
+.p1-field-row{display:flex;gap:12px}
+.p1-field{display:flex;flex-direction:column;gap:5px;flex:1}
+.p1-field--narrow{flex:0 0 80px}
+.p1-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--accent2)}
+.p1-text-input,.p1-select,.p1-textarea{
+  padding:9px 12px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:13px;outline:none;
+  font-family:inherit;transition:border 0.15s;
+}
+.p1-text-input:focus,.p1-select:focus,.p1-textarea:focus{border-color:rgba(104,88,240,0.5)}
+.p1-text-input::placeholder,.p1-textarea::placeholder{color:var(--text3)}
+.p1-select{
+  cursor:pointer;-webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:28px;
+}
+.p1-select option{background:var(--bg2)}
+.p1-textarea{resize:vertical;line-height:1.55;min-height:90px}
+
+/* Build mode toggle */
+.p1-mode-toggle{display:flex;gap:0;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--bg3)}
+.p1-mode-btn{
+  flex:1;padding:9px 14px;background:transparent;border:none;
+  color:var(--text3);cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;
+  transition:all 0.15s;text-align:center;line-height:1.3;
+}
+.p1-mode-btn:first-child{border-right:1px solid var(--border)}
+.p1-mode-btn.sel{background:var(--accent);color:#fff}
+.p1-mode-btn:not(.sel):hover{background:var(--bg4);color:var(--text)}
+.p1-mode-hint{font-size:11px;color:var(--text3);line-height:1.5}
+
+/* Tone picker */
+.p1-tone-picker{display:flex;flex-direction:row;flex-wrap:wrap;gap:6px}
+.p1-tone-btn{
+  padding:7px 12px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;
+  color:var(--text3);cursor:pointer;font-family:inherit;text-align:left;
+  transition:all 0.12s;display:flex;flex-direction:column;gap:2px;flex:1;min-width:120px;
+}
+.p1-tone-btn:hover{border-color:var(--accent);color:var(--text)}
+.p1-tone-btn.sel{background:var(--accent-bg);border-color:var(--accent);color:var(--accent2)}
+.p1-tone-name{font-size:12px;font-weight:700;line-height:1.3}
+.p1-tone-desc{font-size:10px;color:var(--text3);line-height:1.4;font-weight:400}
+.p1-tone-btn.sel .p1-tone-name{color:var(--accent2)}
+.p1-tone-btn.sel .p1-tone-desc{color:var(--accent2);opacity:0.75}
+
+/* PS badge */
+#p1-ps-badge{
+  display:flex;align-items:center;gap:7px;padding:6px 2px;margin-bottom:14px;
+}
+.p1-ps-pill{
+  display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;
+  background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.35);
+  font-size:10px;font-weight:700;color:#e2231a;letter-spacing:0.3px;white-space:nowrap;
+}
+#p1-ps-badge-text{font-size:10px;color:var(--text3);line-height:1.4}
+
+/* Upload zone */
+#p1-upload-zone{
+  display:flex;align-items:center;gap:8px;padding:7px 12px;
+  border:1.5px dashed var(--border2);border-radius:8px;
+  cursor:pointer;font-size:11px;color:var(--text3);
+  transition:all 0.15s;
+}
+#p1-upload-zone:hover{border-color:rgba(104,88,240,0.45);background:var(--bg3);color:var(--text2)}
+#p1-upload-zone strong{color:var(--accent2)}
+#p1-file-chips{display:flex;flex-wrap:wrap;gap:5px;min-height:0}
+
+/* File chip */
+.chip{
+  display:flex;align-items:center;gap:5px;padding:3px 9px;
+  background:var(--bg4);border:1px solid var(--border);border-radius:20px;
+  font-size:10px;color:var(--text2);
+}
+.chip button{background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:0;line-height:1}
+.chip button:hover{color:#e05555}
+
+/* Build wireframe button */
+#p1-build-btn{
+  padding:12px 28px;background:var(--accent);border:none;border-radius:9px;
+  color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:all 0.15s;align-self:flex-end;margin-top:4px;
+}
+#p1-build-btn:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* ── PHASE 2: WIREFRAME ── */
+#phase2{flex-direction:column}
+#p2-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
+  background:var(--bg2);
+}
+#p2-status{font-size:12px;color:var(--text2);font-weight:500;flex:1;min-width:0}
+.p2-header-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#p2-dl{
+  padding:7px 14px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;
+  color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;
+  transition:all 0.15s;white-space:nowrap;
+}
+#p2-dl:hover:not(:disabled){border-color:var(--accent);color:var(--text);background:var(--accent-bg)}
+#p2-dl:disabled{opacity:0.35;cursor:not-allowed}
+#p2-rail{
+  display:flex;gap:6px;padding:10px 20px;
+  border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;
+  background:var(--bg2);
+}
+.wf-tab{
+  flex-shrink:0;padding:5px 12px;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg3);font-size:11px;color:var(--text3);cursor:pointer;
+  transition:all 0.12s;white-space:nowrap;font-family:inherit;
+}
+.wf-tab:hover{border-color:var(--border2);color:var(--text2)}
+.wf-tab.active{border-color:var(--accent);background:var(--accent-bg);color:var(--text)}
+#p2-main{flex:1;display:flex;overflow:hidden}
+#p2-canvas{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:20px}
+#p2-slide-wrap{
+  flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;
+}
+#p2-slide{width:100%;max-width:760px}
+/* ── SHARED CHAT PANEL (Phase 2 & 3) ── */
+.deck-chat{
+  flex-shrink:0;display:flex;flex-direction:column;
+  border-top:1px solid var(--border);background:var(--bg2);
+}
+.deck-chat-msgs{
+  max-height:150px;overflow-y:auto;padding:10px 14px;
+  display:flex;flex-direction:column;gap:7px;
+}
+.deck-chat-msgs:empty{display:none}
+.cmsg{font-size:11px;line-height:1.55;padding:6px 10px;border-radius:7px;max-width:88%;word-break:break-word}
+.cmsg.ai{background:var(--bg3);color:var(--text2);border:1px solid var(--border);align-self:flex-start}
+.cmsg.user{background:var(--bg4);color:var(--text);border:1px solid rgba(104,88,240,0.15);align-self:flex-end;text-align:right}
+.deck-chat-files{
+  display:flex;flex-wrap:wrap;gap:5px;padding:0 14px 4px;min-height:0;
+}
+.deck-chat-files:empty{display:none}
+.chat-file-chip{
+  display:flex;align-items:center;gap:5px;padding:2px 8px;
+  background:var(--bg4);border:1px solid var(--border2);border-radius:20px;
+  font-size:10px;color:var(--text2);
+}
+.chat-file-chip button{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:0;line-height:1}
+.chat-file-chip button:hover{color:#e05555}
+.deck-chat-bar{
+  display:flex;gap:8px;align-items:flex-end;
+  padding:8px 14px 10px;border-top:1px solid var(--border);
+}
+.chat-attach-btn{
+  flex-shrink:0;width:32px;height:32px;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:7px;color:var(--text3);cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;transition:all 0.15s;
+  position:relative;overflow:hidden;
+}
+.chat-attach-btn:hover{border-color:var(--accent);color:var(--accent2)}
+.chat-attach-btn input[type=file]{
+  position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
+}
+.deck-chat-textarea{
+  flex:1;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-size:12px;outline:none;
+  resize:none;font-family:inherit;max-height:100px;line-height:1.5;transition:border 0.15s;
+}
+.deck-chat-textarea:focus{border-color:rgba(104,88,240,0.5)}
+.deck-chat-textarea::placeholder{color:var(--text3)}
+.deck-chat-send{
+  flex-shrink:0;padding:8px 14px;background:var(--accent);border:none;border-radius:7px;
+  color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;
+}
+.deck-chat-send:hover:not(:disabled){background:var(--accent)}
+.deck-chat-send:disabled{opacity:0.38;cursor:not-allowed}
+
+/* Wireframe slide styles */
+.wf-slide{
+  aspect-ratio:16/9;background:#ffffff;border-radius:8px;
+  position:relative;overflow:hidden;
+  box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.05);
+  font-family:'DM Sans',sans-serif;
+}
+.wf-slide.selected{box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 0 2px var(--accent)}
+.wf-inner{width:100%;height:100%;padding:6% 7%;display:flex;flex-direction:column;gap:2.5%}
+.wf-tag{font-size:1.5%;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#6e6c89}
+.wf-title{font-size:3.8%;font-weight:800;color:#0c0b14;line-height:1.1}
+.wf-headline{font-size:1.9%;color:#4a4868;line-height:1.5;font-weight:400}
+.wf-body-cols{display:flex;gap:5%;flex:1;min-height:0;margin-top:1%}
+.wf-text-col{flex:1;display:flex;flex-direction:column;gap:2%}
+.wf-img-box{
+  flex:1;background:#e8e8f0;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;flex-direction:column;gap:4px;
+  border:1px dashed #c8c8d8;min-height:0;
+}
+.wf-img-box span{font-size:1.6%;color:#4a4868;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.wf-img-box small{font-size:1.3%;color:#5e5c7a}
+.wf-bullets{display:flex;flex-direction:column;gap:4%}
+.wf-bullet{font-size:1.65%;color:#2d2d4a;line-height:1.45;padding-left:2%;position:relative}
+.wf-bullet::before{content:'–';position:absolute;left:0;color:#6e6c89}
+.wf-stats-row{display:flex;gap:4%;margin-top:3%}
+.wf-stat{flex:1;padding:5% 6%;background:#f4f4f8;border-radius:4px;border:1px solid #e0e0ea}
+.wf-stat-val{font-size:4%;font-weight:900;color:#0c0b14;line-height:1}
+.wf-stat-lbl{font-size:1.4%;text-transform:uppercase;letter-spacing:1px;color:#6e6c89;margin-top:4%}
+.wf-cta{
+  display:inline-flex;align-items:center;padding:1.8% 3.5%;
+  border:1.5px solid #0c0b14;border-radius:4px;font-size:1.5%;font-weight:700;
+  color:#0c0b14;width:fit-content;margin-top:2%;
+}
+
+/* Approve button */
+#p2-approve{
+  padding:9px 20px;background:var(--accent);border:none;border-radius:8px;
+  color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:all 0.15s;
+}
+#p2-approve:hover:not(:disabled){background:var(--accent);transform:translateY(-1px)}
+#p2-approve:disabled{opacity:0.4;cursor:not-allowed}
+
+/* ── PHASE 3: ART DIRECTION ── */
+#phase3{flex-direction:row}
+#p3-brand-panel{
+  width:300px;flex-shrink:0;border-right:1px solid var(--border);
+  background:var(--bg2);overflow:hidden;display:flex;flex-direction:column;
+}
+#p3-brand-header{
+  padding:13px 16px;border-bottom:1px solid var(--border);flex-shrink:0;
+  display:flex;align-items:center;gap:8px;
+}
+#p3-brand-header h3{
+  font-size:12px;font-weight:700;color:var(--text);letter-spacing:-0.2px;margin:0;
+}
+#p3-brand-inner{padding:16px 16px 24px;flex:1;min-height:0;overflow-y:auto}
+#p3-brand-footer{
+  padding:12px 16px;border-top:1px solid var(--border);
+  background:var(--bg2);flex-shrink:0;
+}
+#p3-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#p3-preview-area{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:20px;overflow:auto;background:var(--bg);
+}
+#p3-preview-area.p3-presenting{
+  padding:0;
+  overflow:hidden;
+  background:#000;
+  position:relative;
+}
+#p3-slide-card{width:100%;max-width:720px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;position:relative;box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04)}
+.sr{width:100%;height:100%;position:relative;overflow:hidden;font-family:'DM Sans',sans-serif}
+#p3-nav-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 0;flex-shrink:0;border-top:1px solid var(--border)}
+.nav-btn{width:26px;height:26px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;cursor:pointer;font-size:14px;transition:all 0.15s;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.nav-btn:hover:not(:disabled){border-color:var(--accent);color:var(--text)}
+.nav-btn:disabled{opacity:0.25;cursor:not-allowed}
+#p3-ctr{font-size:11px;color:var(--text3);min-width:44px;text-align:center;font-family:'DM Mono',monospace}
+#p3-thumbs{
+  display:flex;gap:6px;padding:8px 16px;overflow-x:auto;flex-shrink:0;
+  border-top:1px solid var(--border);background:var(--bg2);min-height:58px;align-items:center;
+}
+.p3-thumb{
+  flex-shrink:0;width:80px;height:45px;border-radius:4px;border:2px solid transparent;
+  cursor:pointer;overflow:hidden;position:relative;transition:all 0.12s;
+}
+.p3-thumb.active{border-color:var(--accent)}
+.p3-thumb:hover:not(.active){border-color:rgba(104,88,240,0.4)}
+.p3-thumb-label{position:absolute;bottom:0;left:0;right:0;font-size:6px;padding:2px 4px;text-align:center;background:rgba(0,0,0,0.6);color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Phase 3 chat — uses shared .deck-chat classes */
+#p3-chat{border-top:none}
+
+/* ── SLIDE ELEMENT TOOLTIP ── */
+/* Entire slide is clickable for element editing */
+#p3-slide-card .sr{cursor:crosshair}
+.sr [data-field]{cursor:pointer;border-radius:3px;transition:box-shadow 0.12s}
+.sr [data-field]:hover{box-shadow:0 0 0 2px rgba(104,88,240,0.65),0 0 0 5px rgba(104,88,240,0.12)}
+.el-selected{box-shadow:0 0 0 2px var(--accent),0 0 0 6px rgba(104,88,240,0.18)!important;border-radius:3px}
+
+/* Tooltip panel */
+#el-tooltip{
+  position:fixed;z-index:99999;width:272px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:11px;
+  box-shadow:0 16px 48px rgba(0,0,0,0.65),0 0 0 1px rgba(255,255,255,0.04);
+  padding:13px 14px 12px;display:none;
+}
+#el-tooltip.visible{display:block}
+#el-tooltip-arrow{
+  position:absolute;width:10px;height:10px;background:var(--bg2);
+  border-left:1px solid var(--border2);border-top:1px solid var(--border2);
+  transform:rotate(45deg);top:-6px;left:20px;
+}
+#el-tooltip-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+#el-tooltip-label{
+  font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;
+  color:var(--accent2);
+}
+#el-tooltip-close{
+  background:none;border:none;cursor:pointer;color:var(--text3);
+  font-size:16px;line-height:1;padding:0;transition:color 0.1s;
+}
+#el-tooltip-close:hover{color:var(--text)}
+#el-tooltip-ref{
+  font-size:10px;color:var(--text3);line-height:1.45;
+  border-left:2px solid var(--border2);padding-left:8px;
+  margin-bottom:9px;font-style:italic;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#el-tooltip-input{
+  width:100%;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-size:12px;resize:none;
+  font-family:inherit;line-height:1.5;outline:none;transition:border 0.15s;
+  display:block;box-sizing:border-box;
+}
+#el-tooltip-input:focus{border-color:rgba(104,88,240,0.55)}
+#el-tooltip-input::placeholder{color:var(--text3)}
+#el-tooltip-hint{font-size:9px;color:var(--text3);margin-top:5px;margin-bottom:8px}
+#el-tooltip-actions{display:flex;gap:6px;justify-content:flex-end}
+#el-tooltip-cancel{
+  padding:5px 12px;background:none;border:1px solid var(--border2);border-radius:6px;
+  color:var(--text3);font-size:11px;cursor:pointer;font-family:inherit;transition:all 0.12s;
+}
+#el-tooltip-cancel:hover{border-color:var(--border2);color:var(--text)}
+#el-tooltip-apply{
+  padding:5px 14px;background:var(--accent);border:none;border-radius:6px;
+  color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.12s;
+}
+#el-tooltip-apply:hover{opacity:0.88}
+#el-tooltip-apply:disabled{opacity:0.38;cursor:not-allowed}
+/* Download dropdown (shared p2 + p3) */
+.dl-wrap{position:relative;display:inline-flex}
+.dl-btn{
+  padding:7px 14px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;
+  color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;
+  transition:all 0.15s;white-space:nowrap;display:flex;align-items:center;gap:5px;
+}
+.dl-btn:hover:not(:disabled){border-color:var(--accent);color:var(--text);background:var(--accent-bg)}
+.dl-btn:disabled{opacity:0.35;cursor:not-allowed}
+.dl-btn .dl-arrow{font-size:9px;opacity:0.6}
+.dl-menu{
+  position:absolute;top:calc(100% + 5px);right:0;z-index:9999;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:8px;
+  box-shadow:0 12px 32px rgba(0,0,0,0.5);overflow:hidden;display:none;min-width:160px;
+}
+.dl-wrap.open .dl-menu{display:block}
+.dl-menu button{
+  display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;
+  border:none;color:var(--text2);font-size:12px;font-family:inherit;cursor:pointer;text-align:left;
+  transition:background 0.1s;
+}
+.dl-menu button:hover{background:var(--bg3);color:var(--text)}
+.dl-menu button .dl-mi{font-size:14px}
+#p3-dl-bar{display:none}
+#p3-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);
+}
+#p3-header-left{font-size:12px;color:var(--text2);font-weight:500;flex:1;min-width:0}
+#p3-header-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#p3-share{padding:7px 12px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap}
+#p3-share:hover:not(:disabled){border-color:var(--accent);color:var(--text);background:var(--accent-bg)}
+#p3-share:disabled{opacity:0.35;cursor:not-allowed}
+#p3-present{padding:7px 12px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap}
+#p3-present:hover:not(:disabled){border-color:var(--accent);color:var(--text);background:var(--accent-bg)}
+#p3-present:disabled{opacity:0.35;cursor:not-allowed}
+
+/* Share link modal */
+.share-modal-root{
+  display:none;position:fixed;inset:0;z-index:100001;align-items:center;justify-content:center;
+  padding:20px;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);
+}
+.share-modal-root.open{display:flex}
+.share-modal-panel{
+  width:100%;max-width:440px;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;
+  padding:20px 22px;box-shadow:0 24px 64px rgba(0,0,0,0.55);
+}
+.share-modal-panel h3{font-size:14px;font-weight:700;letter-spacing:-0.2px;margin:0 0 8px;color:var(--text)}
+.share-modal-panel p{font-size:12px;color:var(--text3);line-height:1.55;margin:0 0 14px}
+.share-modal-panel input{
+  width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-size:12px;font-family:'DM Mono',monospace;margin-bottom:12px;outline:none;
+}
+.share-modal-panel input:focus{border-color:rgba(104,88,240,0.5)}
+.share-modal-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.share-modal-actions button{
+  padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+  border:1px solid var(--border2);background:var(--bg4);color:var(--text2);transition:all 0.12s;
+}
+.share-modal-actions button:hover{border-color:var(--accent);color:var(--text)}
+.share-modal-actions button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.share-modal-actions button.primary:hover{opacity:0.92}
+
+/* Brand panel UI */
+.sec-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin:18px 0 9px}
+.sec-lbl:first-child{margin-top:0}
+.b-field{margin-bottom:10px}
+.b-field label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500}
+.b-field input,.b-field select{
+  width:100%;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-size:11px;outline:none;transition:border 0.15s;font-family:inherit;
+}
+.b-field input:focus,.b-field select:focus{border-color:rgba(104,88,240,0.5)}
+
+/* Font picker (preview each Google Font in-list) */
+.b-font-picker{position:relative;width:100%}
+.b-font-trigger{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:7px 10px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-size:12px;cursor:pointer;text-align:left;
+  font-family:inherit;transition:border 0.15s;
+}
+.b-font-trigger:hover{border-color:var(--border2)}
+.b-font-trigger:focus{outline:none;border-color:rgba(104,88,240,0.5)}
+.b-font-trigger-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.35}
+.b-font-trigger-caret{flex-shrink:0;font-size:10px;color:var(--text3);opacity:0.85}
+.b-font-dropdown{
+  position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:2000;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:8px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.5);display:flex;flex-direction:column;
+  max-height:min(340px,55vh);min-width:0;
+}
+/* [hidden] must win over display:flex above (otherwise panel shows open by default). */
+.b-font-dropdown[hidden]{display:none !important;}
+.b-font-search{
+  width:100%;padding:8px 10px;border:none;border-bottom:1px solid var(--border);
+  background:var(--bg3);color:var(--text);font-size:11px;outline:none;border-radius:8px 8px 0 0;
+  font-family:inherit;
+}
+.b-font-search:focus{border-bottom-color:rgba(104,88,240,0.45)}
+.b-font-list{overflow-y:auto;overflow-x:hidden;flex:1;padding:4px 0;min-height:0}
+.b-font-row{
+  width:100%;padding:8px 12px;cursor:pointer;display:flex;flex-direction:column;gap:4px;align-items:stretch;
+  border:none;border-left:3px solid transparent;background:transparent;text-align:left;
+  font:inherit;color:inherit;transition:background 0.1s;
+}
+.b-font-row:hover{background:var(--bg4)}
+.b-font-row.sel{background:var(--accent-bg);border-left-color:var(--accent)}
+.b-font-row-main{font-size:14px;line-height:1.4;color:var(--text);word-break:break-word}
+.b-font-row-meta{font-size:10px;color:var(--text3);font-family:'DM Sans',sans-serif}
+.slide-editable,.wf-editable{cursor:text;min-height:1em}
+.slide-editable:focus,.wf-editable:focus{outline:1px solid rgba(104,88,240,0.65);outline-offset:2px;border-radius:2px}
+.b-field input::placeholder{color:var(--text3)}
+.b-brand-url-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.b-brand-url-row input[type=url]{
+  flex:1;min-width:0;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-size:11px;outline:none;font-family:inherit;
+}
+.b-brand-url-row input[type=url]:focus{border-color:rgba(104,88,240,0.5)}
+.b-brand-analyze-btn{
+  flex-shrink:0;padding:7px 12px;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;
+  color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;
+  transition:all 0.12s;
+}
+.b-brand-analyze-btn:hover:not(:disabled){border-color:var(--accent);color:var(--text);background:var(--accent-bg)}
+.b-brand-analyze-btn:disabled{opacity:0.45;cursor:not-allowed}
+.b-brand-url-hint{display:block;margin-top:6px;font-size:10px;color:var(--text3);line-height:1.45}
+.color-row{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.color-row input[type=color]{width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);padding:2px;cursor:pointer;background:var(--bg3);flex-shrink:0}
+.color-row input[type=text]{flex:1;padding:5px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;outline:none;font-family:'DM Mono',monospace}
+.color-row input[type=text]:focus{border-color:rgba(104,88,240,0.5)}
+
+.sc-pref-btn{
+  padding:7px 10px;border-radius:7px;border:1px solid var(--border);
+  background:var(--bg3);cursor:pointer;font-family:inherit;transition:all 0.12s;text-align:left;width:100%;
+}
+.sc-pref-btn:hover{border-color:var(--border2)}
+.sc-pref-btn.sel{border-color:var(--accent);background:var(--accent-bg)}
+
+/* Art preset cards */
+.presets-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.preset-btn{
+  padding:0;border-radius:8px;border:1.5px solid var(--border);
+  background:var(--bg3);cursor:pointer;font-family:inherit;transition:all 0.12s;
+  text-align:left;overflow:hidden;width:100%;
+}
+.preset-btn:hover{border-color:var(--border2)}
+.preset-btn.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.preset-swatch{height:5px;width:100%;display:flex}
+.preset-swatch-seg{flex:1}
+.preset-btn .pn{font-size:10px;font-weight:600;color:var(--text);padding:7px 9px;line-height:1.3;display:block}
+
+/* Tone of voice buttons */
+.tones-list{display:flex;flex-direction:column;gap:5px}
+.tone-btn{
+  padding:9px 11px;border-radius:8px;border:1.5px solid var(--border);
+  background:var(--bg3);cursor:pointer;font-family:inherit;transition:all 0.12s;text-align:left;width:100%;
+}
+.tone-btn:hover{border-color:var(--border2)}
+.tone-btn.sel{border-color:var(--accent);background:var(--accent-bg)}
+.tone-btn .tn{font-size:11px;font-weight:600;color:var(--text);line-height:1.3}
+.tone-btn .td{font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4}
+#art-rec{
+  font-size:10px;color:var(--accent2);margin-bottom:8px;min-height:16px;
+  padding:5px 8px;background:var(--accent-bg);border-radius:5px;
+  border:1px solid rgba(104,88,240,0.2);display:none;
+}
+#art-rec:not(:empty){display:block}
+
+/* Design mode toggle */
+.design-mode-toggle{display:flex;gap:6px;margin-bottom:16px}
+.dmt-btn{
+  flex:1;padding:9px 8px;border-radius:8px;border:1.5px solid var(--border);
+  background:var(--bg3);cursor:pointer;font-family:inherit;transition:all 0.12s;
+  text-align:center;font-size:11px;font-weight:600;color:var(--text2);
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.dmt-btn:hover{border-color:var(--border2);color:var(--text)}
+.dmt-btn.sel{border-color:var(--accent);background:var(--accent-bg);color:var(--text)}
+.dmt-btn .dmt-icon{font-size:16px;line-height:1}
+.dmt-btn .dmt-lbl{font-size:10px;font-weight:700;letter-spacing:0.2px}
+.dmt-btn .dmt-sub{font-size:9px;color:var(--text3);font-weight:400;margin-top:1px}
+.dmt-btn.sel .dmt-sub{color:var(--accent2)}
+/* PS brand info box */
+.ps-brand-info{
+  padding:10px 12px;border-radius:8px;background:rgba(226,35,26,0.08);
+  border:1px solid rgba(226,35,26,0.25);margin-bottom:12px;
+}
+.ps-brand-info .ps-bi-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ps-brand-info .ps-bi-row:last-child{margin-bottom:0}
+.ps-brand-info .ps-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;border:1px solid rgba(255,255,255,0.15)}
+.ps-brand-info .ps-bi-txt{font-size:10px;color:var(--text2);line-height:1.4}
+.ps-brand-info .ps-bi-txt strong{color:var(--text);font-weight:600}
+.logo-upload{
+  display:flex;align-items:center;gap:9px;padding:8px 10px;
+  border:1.5px dashed var(--border2);border-radius:7px;cursor:pointer;transition:all 0.15s;
+}
+.logo-upload:hover{border-color:rgba(104,88,240,0.4);background:var(--bg3)}
+.logo-upload span{font-size:11px;color:var(--text3)}
+.logo-upload strong{color:var(--accent2)}
+#logo-preview{width:32px;height:32px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.add-color-btn{
+  width:100%;padding:5px 10px;border:1px dashed var(--border2);border-radius:6px;
+  background:transparent;color:var(--accent2);font-size:11px;cursor:pointer;
+  font-family:inherit;transition:all 0.12s;
+}
+.add-color-btn:hover{border-color:var(--accent);background:var(--accent-bg)}
+#p3-gen{
+  width:100%;padding:11px;border-radius:8px;background:var(--accent);border:none;
+  color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:all 0.15s;letter-spacing:-0.2px;
+}
+#p3-gen:hover:not(:disabled){background:var(--accent);transform:translateY(-1px);box-shadow:0 6px 20px rgba(104,88,240,0.35)}
+#p3-gen:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+/* Empty states */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3);height:100%;text-align:center}
+.empty-state .ei{font-size:40px;opacity:0.4}
+.empty-state p{font-size:13px}
+.empty-state small{font-size:11px;opacity:0.6}
+
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:26px;height:26px;border:2.5px solid var(--bg4);border-top-color:var(--accent);border-radius:50%;animation:spin 0.75s linear infinite}
+/* Phase 3: full preview while deck JSON generates */
+.p3-gen-loading{min-height:min(360px,50vh);width:100%;padding:28px 20px;gap:10px;justify-content:center}
+.p3-gen-spinner{width:40px;height:40px;border-width:3px}
+.p3-gen-loading-title{color:var(--text2);font-weight:600;margin-top:6px}
+.p3-gen-loading-hint{max-width:300px;line-height:1.55;opacity:0.85}
+
+/* Loading overlay on slide (kept for legacy/edge cases) */
+.slide-loading{position:absolute;inset:0;background:rgba(12,11,20,0.85);display:flex;align-items:center;justify-content:center;z-index:20;border-radius:inherit}
+
+/* ── Image placeholder — sits inside the slide's image slot ─────────── */
+/* Position and size are set via inline styles in _injectImagePlaceholder(). */
+/* This CSS only handles the visual appearance and inner layout.            */
+.img-placeholder{
+  /* position/size/border-radius come from inline styles per layout */
+  z-index:6;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(6,5,18,0.68);
+  backdrop-filter:blur(6px);
+  border:1px dashed rgba(255,255,255,0.14);
+  overflow:hidden;pointer-events:auto;
+  gap:0;
+}
+.img-ph-inner{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:7px;padding:14px 12px;text-align:center;width:100%;
+}
+.img-ph-icon{font-size:22px;opacity:0.5;line-height:1;flex-shrink:0}
+.img-ph-priority{font-size:7.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 6px;border-radius:3px;flex-shrink:0}
+.img-ph-priority.high{color:#f0c060;background:rgba(240,192,96,0.15)}
+.img-ph-priority.medium{color:#80c8f0;background:rgba(128,200,240,0.12)}
+.img-ph-priority.low{color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.06)}
+.img-ph-desc{font-size:8.5px;color:rgba(255,255,255,0.4);font-style:italic;line-height:1.45;max-width:140px}
+.img-ph-status{font-size:7.5px;color:rgba(255,255,255,0.28);text-transform:uppercase;letter-spacing:0.07em;font-weight:600}
+.img-ph-actions{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:2px}
+.img-ph-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.78);border-radius:4px;padding:3px 8px;font-size:8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background 0.12s;line-height:1.4;pointer-events:auto}
+.img-ph-btn:hover:not(:disabled){background:rgba(255,255,255,0.16);border-color:rgba(255,255,255,0.28)}
+.img-ph-btn.primary{background:var(--accent,#7c6af7);border-color:transparent;color:#fff;font-weight:600}
+.img-ph-btn.primary:hover:not(:disabled){filter:brightness(1.15)}
+.img-ph-btn.danger{color:#e08080;border-color:rgba(224,128,128,0.25)}
+.img-ph-btn:disabled{opacity:0.35;cursor:default}
+
+/* ── Provisional (dummy) content markers ───────────────────────────── */
+/* Applied to .slide-editable elements whose value came from <<REPLACE:...>> */
+.ph-provisional {
+  border-bottom: 1px dotted rgba(255, 200, 80, 0.55) !important;
+  cursor: help;
+}
+/* Info icon appended after provisional content */
+.ph-provisional::after {
+  content: ' ⓘ';
+  font-size: 0.52em;
+  color: rgba(255, 200, 80, 0.65);
+  vertical-align: super;
+  font-style: normal;
+  pointer-events: none;
+  font-weight: normal;
+  letter-spacing: 0;
+}
+/* Remove markers once user has confirmed / edited the field */
+.ph-provisional.ph-confirmed,
+.ph-provisional.ph-confirmed::after {
+  border-bottom: none !important;
+  content: '' !important;
+}
+
+/* ── Overflow processing badge ──────────────────────────────────────── */
+.overflow-badge{
+  position:absolute;top:8px;right:8px;z-index:20;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(10,9,26,0.9);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:6px;padding:5px 10px;
+  font-size:9.5px;color:rgba(255,255,255,0.65);
+  font-family:inherit;pointer-events:none;
+}
+
+/* ── Layout picker popup ────────────────────────────────────────────── */
+.layout-picker-popup{background:var(--bg2,#1a1a2e);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:6px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.55);z-index:9999}
+.lp-opt{display:flex;align-items:center;gap:9px;width:100%;background:none;border:none;color:var(--text1,#fff);border-radius:7px;padding:8px 10px;cursor:pointer;font-family:inherit;text-align:left}
+.lp-opt:hover{background:rgba(255,255,255,0.07)}
+.lp-icon{font-size:15px;flex-shrink:0;width:18px;text-align:center}
+.lp-info{line-height:1.3}
+.lp-info strong{font-size:11px;display:block}
+.lp-info small{color:rgba(255,255,255,0.35);font-size:9px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="app-header">
+  <div class="logo">PS Deck <em>Magic</em> <span style="font-size:10px;font-weight:600;background:#7c3aed;color:#fff;padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.05em;vertical-align:middle">V5</span></div>
+
+  <div class="stepper">
+    <div class="step active" id="step1"><div class="step-num">1</div> Context</div>
+    <div class="step-connector"></div>
+    <div class="step" id="step2"><div class="step-num">2</div> Structure</div>
+    <div class="step-connector"></div>
+    <div class="step" id="step3"><div class="step-num">3</div> Design</div>
+  </div>
+
+  <div class="header-right">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">Connecting…</span>
+  </div>
+</header>
+
+<!-- ── PHASE 1: BRIEF PANEL ─────────────────────────────── -->
+<div class="phase active" id="phase1">
+  <div id="p1-panel">
+
+    <div id="p1-ps-badge">
+      <span class="p1-ps-pill">Bodhi</span>
+      <span class="p1-ps-pill">Slingshot</span>
+      <span id="p1-ps-badge-text">Built-in knowledge of Publicis Sapient's AI platforms — no context needed</span>
+    </div>
+
+    <div class="p1-form">
+
+      <div class="p1-field-row">
+        <div class="p1-field">
+          <label class="p1-label" for="p1-client">Client name</label>
+          <input type="text" id="p1-client" class="p1-text-input" placeholder="e.g. Barclays">
+        </div>
+        <div class="p1-field">
+          <label class="p1-label" for="p1-audience">Audience</label>
+          <input type="text" id="p1-audience" class="p1-text-input" placeholder="e.g. CTO and CIO">
+        </div>
+      </div>
+
+      <div class="p1-field">
+        <label class="p1-label" for="p1-objective">Objective</label>
+        <input type="text" id="p1-objective" class="p1-text-input" placeholder="e.g. Win approval for a Bodhi pilot">
+      </div>
+
+      <div class="p1-field">
+        <label class="p1-label">What are you building?</label>
+        <div class="p1-mode-toggle">
+          <button type="button" class="p1-mode-btn sel" id="p1-mode-single" onclick="Phase1.onBuildModeChange('single-deck', this)">A single focused deck</button>
+          <button type="button" class="p1-mode-btn" id="p1-mode-proposal" onclick="Phase1.onBuildModeChange('full-proposal', this)">A full proposal</button>
+        </div>
+        <span class="p1-mode-hint" id="p1-mode-hint">Use this when you need one focused narrative, like an executive summary or roadmap.</span>
+      </div>
+
+      <div id="p1-deck-type-section">
+        <div class="p1-field">
+          <label class="p1-label" for="p1-deck-type">Deck type</label>
+          <select id="p1-deck-type" class="p1-select">
+            <option value="executive-summary">Executive Summary</option>
+            <option value="vision-narrative">Vision &amp; Creative Narrative</option>
+            <option value="product-ux">Product &amp; UX Deep Dive</option>
+            <option value="tech-architecture">Technical Architecture &amp; AI Capability</option>
+            <option value="delivery-roadmap">Delivery Roadmap &amp; Timeline</option>
+            <option value="commercial-roi">Commercial Model &amp; ROI Case</option>
+            <option value="governance-model">Governance &amp; Operating Model</option>
+            <option value="change-adoption">Change &amp; Adoption Strategy</option>
+            <option value="industry-lens">Industry-Specific Lens</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="p1-proposal-size-section" style="display:none">
+        <div class="p1-field">
+          <label class="p1-label" for="p1-proposal-size">Proposal size</label>
+          <select id="p1-proposal-size" class="p1-select">
+            <option value="lean">Fast pitch</option>
+            <option value="standard" selected>Standard proposal</option>
+            <option value="full-fat">Full transformation case</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="p1-field">
+        <label class="p1-label" for="p1-industry">Industry</label>
+        <select id="p1-industry" class="p1-select" onchange="App.state.industryKey=this.value||null">
+          <option value="">None</option>
+          <option value="financial-services">Financial Services</option>
+          <option value="retail">Retail</option>
+          <option value="health">Health</option>
+          <option value="transport-mobility">Transport &amp; Mobility</option>
+          <option value="consumer-products">Consumer Products</option>
+          <option value="energy-commodities">Energy &amp; Commodities</option>
+          <option value="travel-hospitality">Travel &amp; Hospitality</option>
+          <option value="tmt">TMT</option>
+          <option value="public-sector">Public Sector</option>
+        </select>
+      </div>
+
+      <div class="p1-field">
+        <label class="p1-label">Tone of voice</label>
+        <div class="p1-tone-picker">
+          <button type="button" class="p1-tone-btn" data-tone="warm" onclick="Phase1.selectTone('warm',this)"><span class="p1-tone-name">Warm &amp; human</span><span class="p1-tone-desc">Empathy-first, conversational, trusted partner feel</span></button>
+          <button type="button" class="p1-tone-btn" data-tone="data" onclick="Phase1.selectTone('data',this)"><span class="p1-tone-name">Data-driven</span><span class="p1-tone-desc">Numbers-led, specific claims, every stat earns its place</span></button>
+          <button type="button" class="p1-tone-btn sel" data-tone="visionary" onclick="Phase1.selectTone('visionary',this)"><span class="p1-tone-name">Visionary</span><span class="p1-tone-desc">Cinematic, quotable headlines, manifesto energy</span></button>
+          <button type="button" class="p1-tone-btn" data-tone="executive" onclick="Phase1.selectTone('executive',this)"><span class="p1-tone-name">Executive</span><span class="p1-tone-desc">Sharp, no preamble, one idea per sentence</span></button>
+          <button type="button" class="p1-tone-btn" data-tone="punchy" onclick="Phase1.selectTone('punchy',this)"><span class="p1-tone-name">Punchy</span><span class="p1-tone-desc">Short sentences, active voice, zero filler</span></button>
+        </div>
+      </div>
+
+      <div class="p1-field">
+        <label class="p1-label" for="p1-brief">Brief &amp; key points</label>
+        <textarea id="p1-brief" class="p1-textarea" rows="5" placeholder="Paste your brief, key messages, proof points, constraints, or anything the AI should know…"></textarea>
+      </div>
+
+      <div id="p1-upload-zone" onclick="document.getElementById('p1-file-inp').click()">
+        <span>📎</span>
+        <span><strong>Attach files</strong> — PDFs, Word, images, spreadsheets</span>
+        <input type="file" id="p1-file-inp" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.md,.png,.jpg,.jpeg" style="display:none">
+      </div>
+      <div id="p1-file-chips"></div>
+
+      <button type="button" id="p1-build-btn" onclick="Phase1.proceedToWireframe()">Build Wireframe →</button>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── PHASE 2: WIREFRAME & STRUCTURE ─────────────────── -->
+<div class="phase" id="phase2">
+  <div id="p2-header">
+    <div id="p2-status">Generating wireframe…</div>
+    <div class="p2-header-actions">
+      <div class="dl-wrap" id="p2-dl-wrap">
+        <button type="button" class="dl-btn" id="p2-dl" disabled onclick="Phase2.toggleDlMenu(event)">⬇ Download <span class="dl-arrow">▾</span></button>
+        <div class="dl-menu" id="p2-dl-menu">
+          <button onclick="Phase2.downloadPPTX();Phase2.closeDlMenu()"><span class="dl-mi">📊</span> PowerPoint (.pptx)</button>
+          <button onclick="Phase2.downloadPDF();Phase2.closeDlMenu()"><span class="dl-mi">📄</span> PDF (.pdf)</button>
+        </div>
+      </div>
+      <button type="button" id="p2-approve" disabled>Approve Structure →</button>
+    </div>
+  </div>
+  <div id="p2-rail"></div>
+  <div id="p2-main">
+    <div id="p2-canvas">
+      <div id="p2-slide-wrap">
+        <div id="p2-slide">
+          <div class="empty-state" style="height:360px;">
+            <div class="spinner"></div>
+            <p style="margin-top:12px;font-size:12px;color:var(--text3)">Building wireframe…</p>
+          </div>
+        </div>
+      </div>
+      <div id="p2-chat" class="deck-chat">
+        <div id="p2-chat-msgs" class="deck-chat-msgs"></div>
+        <div id="p2-chat-files" class="deck-chat-files"></div>
+        <div class="deck-chat-bar">
+          <button class="chat-attach-btn" title="Attach file">
+            📎<input type="file" id="p2-file-inp" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.md,.png,.jpg,.jpeg,.webp">
+          </button>
+          <button type="button" id="p2-voice" class="chat-voice-btn" title="Voice input" aria-label="Voice input">🎤</button>
+          <textarea id="p2-chat-input" class="deck-chat-textarea" rows="1" placeholder="Ask me anything — "make slide 3 more data-driven", "add a ROI slide after slide 4", "shorten the whole deck"…"></textarea>
+          <button id="p2-chat-send" class="deck-chat-send" disabled>→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PHASE 3: ART DIRECTION & GENERATION ────────────── -->
+<div class="phase" id="phase3">
+  <!-- Brand panel -->
+  <div id="p3-brand-panel">
+    <div id="p3-brand-header">
+      <h3>Brand &amp; Art Direction</h3>
+    </div>
+    <div id="p3-brand-inner">
+      <!-- Rendered by phase3.js -->
+      <div style="padding-top:20px;color:var(--text3);font-size:12px;text-align:center">Loading…</div>
+    </div>
+    <div id="p3-brand-footer">
+      <button id="p3-gen" disabled>✦ Generate Deck</button>
+    </div>
+  </div>
+
+  <!-- Preview + controls -->
+  <div id="p3-main">
+    <div id="p3-header">
+      <div id="p3-header-left"><span id="p3-badge"></span></div>
+      <div id="p3-header-right">
+        <button type="button" id="p3-share" disabled title="Share a view-only link">🔗 Share</button>
+        <button type="button" id="p3-present" disabled onclick="Phase3.togglePresentation()">⛶ Present</button>
+        <div class="dl-wrap" id="p3-dl-wrap">
+          <button type="button" class="dl-btn" id="p3-dl" disabled onclick="Phase3.toggleDlMenu(event)">⬇ Download <span class="dl-arrow">▾</span></button>
+          <div class="dl-menu" id="p3-dl-menu">
+            <button onclick="Phase3.downloadPPTX();Phase3.closeDlMenu()"><span class="dl-mi">📊</span> PowerPoint (.pptx)</button>
+            <button onclick="Phase3.downloadPDF();Phase3.closeDlMenu()"><span class="dl-mi">📄</span> PDF (.pdf)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="p3-preview-area">
+      <div id="p3-slide-card">
+        <div class="empty-state">
+          <div class="ei">🎴</div>
+          <p>Set your brand identity and click Generate</p>
+          <small>Cinematic slides will appear here</small>
+        </div>
+      </div>
+    </div>
+
+    <div id="p3-nav-bar">
+      <button class="nav-btn" id="p3-prev" disabled>‹</button>
+      <span id="p3-ctr">— / —</span>
+      <button class="nav-btn" id="p3-next" disabled>›</button>
+    </div>
+
+    <div id="p3-thumbs"></div>
+
+    <div id="p3-chat" class="deck-chat">
+      <div id="p3-chat-msgs" class="deck-chat-msgs"></div>
+      <div id="p3-chat-files" class="deck-chat-files"></div>
+      <div class="deck-chat-bar">
+        <button class="chat-attach-btn" title="Attach file">
+          📎<input type="file" id="p3-file-inp" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.md,.png,.jpg,.jpeg,.webp">
+        </button>
+        <!-- Hidden input for per-slide image upload (triggered by placeholder Upload button) -->
+        <input type="file" id="p3-slide-img-inp" accept="image/*" style="display:none">
+        <button type="button" id="p3-voice" class="chat-voice-btn" title="Voice input" aria-label="Voice input">🎤</button>
+        <textarea id="p3-chat-input" class="deck-chat-textarea" rows="1" placeholder="Refine anything — "make slide 3 more data-driven", "add a closing CTA", "swap the image on slide 5"…"></textarea>
+        <button id="p3-chat-send" class="deck-chat-send" disabled>→</button>
+      </div>
+    </div>
+
+    <div id="p3-dl-bar"></div>
+  </div>
+</div>
+
+<!-- Element tooltip -->
+<div id="el-tooltip">
+  <div id="el-tooltip-arrow"></div>
+  <div id="el-tooltip-header">
+    <span id="el-tooltip-label">Element</span>
+    <button id="el-tooltip-close" title="Close">×</button>
+  </div>
+  <div id="el-tooltip-ref"></div>
+  <textarea id="el-tooltip-input" rows="3" placeholder="Describe your change…"></textarea>
+  <div id="el-tooltip-hint">Enter to apply · Esc to cancel</div>
+  <div id="el-tooltip-actions">
+    <button id="el-tooltip-cancel">Cancel</button>
+    <button id="el-tooltip-apply">Apply ✦</button>
+  </div>
+</div>
+
+<div id="share-modal" class="share-modal-root" aria-hidden="true">
+  <div class="share-modal-panel" role="dialog" aria-labelledby="share-modal-title" onclick="event.stopPropagation()">
+    <h3 id="share-modal-title">View-only link</h3>
+    <p>Anyone with this link can open the deck in the browser (read-only). Links are stored on this server until you delete the data folder.</p>
+    <input type="text" id="share-url-input" readonly autocomplete="off" />
+    <div class="share-modal-actions">
+      <button type="button" id="share-modal-close">Close</button>
+      <button type="button" id="share-copy-btn" class="primary">Copy link</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/load-google-fonts.js?v=1"></script>
+<script src="/js/renderer.js?v=7"></script>
+<script src="/js/voice-input.js?v=1"></script>
+<script src="/js/app.js?v=6"></script>
+<script src="/js/brain.js?v=1"></script>
+<script src="/js/phase1.js?v=3"></script>
+<script src="/js/phase2.js?v=6"></script>
+<script src="/js/phase3.js?v=11"></script>
+</body>
+</html>

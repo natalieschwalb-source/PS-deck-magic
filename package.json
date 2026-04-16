@@ -1,0 +1,19 @@
+{
+  "name": "ps-deck-magic-v5",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Agency deck builder with server-side AI + client-side PPTX export.",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "NODE_ENV=production node server.js",
+    "tunnel": "npx --yes localtunnel --port 5184"
+  },
+  "dependencies": {
+    "@google/genai": "^1.47.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonrepair": "^3.13.3",
+    "openai": "^4.86.2"
+  }
+}

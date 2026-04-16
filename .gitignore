@@ -1,0 +1,7 @@
+node_modules/
+.env
+public/clips/*.mp4
+data/shares/*.json
+data/rag/
+.DS_Store
+.claude/

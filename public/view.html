@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Shared deck · PS Deck Magic</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lato:wght@400;700&family=Lexend+Deca:wght@400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800;900&family=Merriweather:wght@400;700&family=Nunito+Sans:wght@400;600;700&family=Open+Sans:wght@400;600;700&family=Poppins:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0b14;--bg2:#13111f;--bg3:#1a1826;--bg4:#211f32;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#eceaf8;--text2:#9491b0;--text3:#8886a5;
+  --accent:#6858f0;--accent2:#a89cf8;--accent-bg:rgba(104,88,240,0.12);
+}
+html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden}
+.view-share-page #p3-slide-card .sr{cursor:default}
+.view-share-page #p3-slide-card .sr [data-field]{cursor:default;box-shadow:none!important}
+#view-topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;
+}
+#view-topbar .logo{font-size:14px;font-weight:700;letter-spacing:-0.3px}
+#view-topbar .logo em{color:var(--accent2);font-style:normal}
+#view-badge{font-size:12px;color:var(--text2);font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#view-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#view-present{
+  padding:7px 12px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;
+  color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;
+}
+#view-present:hover{border-color:var(--accent);color:var(--text);background:var(--accent-bg)}
+.view-pill{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--text3);padding:4px 8px;border:1px solid var(--border2);border-radius:6px;
+}
+#view-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+#p3-preview-area{
+  flex:1;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;background:var(--bg);min-height:0;
+}
+#p3-preview-area.p3-presenting{padding:0;overflow:hidden;background:#000;position:relative}
+#p3-slide-card{width:100%;max-width:720px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;position:relative;box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04)}
+.sr{width:100%;height:100%;position:relative;overflow:hidden;font-family:'DM Sans',sans-serif}
+#p3-nav-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 0;flex-shrink:0;border-top:1px solid var(--border)}
+.nav-btn{width:26px;height:26px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.nav-btn:hover:not(:disabled){border-color:var(--accent);color:var(--text)}
+.nav-btn:disabled{opacity:0.25;cursor:not-allowed}
+#p3-ctr{font-size:11px;color:var(--text3);min-width:44px;text-align:center;font-family:'DM Mono',monospace}
+#p3-thumbs{
+  display:flex;gap:6px;padding:8px 16px;overflow-x:auto;flex-shrink:0;border-top:1px solid var(--border);background:var(--bg2);min-height:58px;align-items:center;
+}
+.p3-thumb{flex-shrink:0;width:80px;height:45px;border-radius:4px;border:2px solid transparent;cursor:pointer;overflow:hidden;position:relative}
+.p3-thumb.active{border-color:var(--accent)}
+.p3-thumb:hover:not(.active){border-color:rgba(104,88,240,0.4)}
+.p3-thumb-label{position:absolute;bottom:0;left:0;right:0;font-size:6px;padding:2px 4px;text-align:center;background:rgba(0,0,0,0.6);color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.view-err,.view-loading{padding:48px 24px;text-align:center;color:var(--text2);font-size:14px;line-height:1.6;max-width:420px;margin:0 auto}
+.view-err strong{color:#e05555}
+.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:vs-spin 0.8s linear infinite;margin:0 auto 16px}
+@keyframes vs-spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body class="view-share-page">
+<header id="view-topbar">
+  <div class="logo">PS Deck <em>Magic</em></div>
+  <span id="view-badge">…</span>
+  <div id="view-actions">
+    <span class="view-pill">View only</span>
+    <button type="button" id="view-present" title="Fullscreen">⛶ Present</button>
+  </div>
+</header>
+<div id="view-main">
+  <div id="p3-preview-area">
+    <div id="p3-slide-card">
+      <div class="view-loading"><div class="spinner"></div><p>Loading deck…</p></div>
+    </div>
+  </div>
+  <div id="p3-nav-bar">
+    <button type="button" class="nav-btn" id="p3-prev" disabled>‹</button>
+    <span id="p3-ctr">— / —</span>
+    <button type="button" class="nav-btn" id="p3-next" disabled>›</button>
+  </div>
+  <div id="p3-thumbs"></div>
+</div>
+<script src="/js/load-google-fonts.js?v=1"></script>
+<script src="/js/renderer.js?v=7"></script>
+<script src="/js/view-share.js?v=2"></script>
+</body>
+</html>
